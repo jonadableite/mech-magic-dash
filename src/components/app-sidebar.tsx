@@ -1,0 +1,89 @@
+"use client";
+
+import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem, SidebarTrigger } from "@/components/ui/sidebar";
+import { LayoutDashboard, Users, Wrench, Package, Settings, Car } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+const menuItems = [
+  {
+    title: "Dashboard",
+    url: "/dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    title: "Clientes",
+    url: "/clientes",
+    icon: Users,
+  },
+  {
+    title: "Ordens de Serviço",
+    url: "/ordens",
+    icon: Wrench,
+  },
+  {
+    title: "Estoque",
+    url: "/estoque",
+    icon: Package,
+  },
+  {
+    title: "Configurações",
+    url: "/configuracoes",
+    icon: Settings,
+  },
+];
+
+export function AppSidebar() {
+  const pathname = usePathname();
+
+  return (
+    <Sidebar className="border-r border-sidebar-border bg-sidebar-background backdrop-blur-md">
+      <SidebarHeader className="border-b border-sidebar-border p-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sidebar-primary to-sidebar-primary/80 text-sidebar-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+            <Car className="h-5 w-5" />
+          </div>
+          <div className="grid flex-1 text-left text-sm leading-tight">
+            <span className="truncate font-bold text-lg text-sidebar-foreground">Mech Magic</span>
+            <span className="truncate text-xs text-sidebar-foreground/70">
+              Oficina Automotiva
+            </span>
+          </div>
+        </div>
+      </SidebarHeader>
+      <SidebarContent className="p-3">
+        <SidebarMenu className="space-y-2">
+          {menuItems.map((item, index) => (
+            <SidebarMenuItem key={item.title}>
+              <SidebarMenuButton
+                asChild
+                isActive={pathname === item.url}
+                className={`w-full justify-start hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] touch-target ${pathname === item.url
+                  ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-sm border border-sidebar-border'
+                  : ''
+                  }`}
+                tooltip={item.title}
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                <Link href={item.url} className="flex items-center gap-3 w-full">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-accent/50 transition-colors duration-200 group-hover:bg-sidebar-accent">
+                    <item.icon className="h-4 w-4 transition-transform duration-200 group-hover:scale-110 text-sidebar-foreground" />
+                  </div>
+                  <span className="font-medium text-sidebar-foreground">{item.title}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
+
+        {/* Footer da sidebar */}
+        <div className="mt-auto p-3 border-t border-sidebar-border">
+          <div className="text-xs text-sidebar-foreground/70 text-center">
+            <p className="font-medium">Versão 1.0.0</p>
+            <p>© 2024 Mech Magic</p>
+          </div>
+        </div>
+      </SidebarContent>
+    </Sidebar>
+  );
+}

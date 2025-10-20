@@ -1,0 +1,115 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Cliente {
+  id        String   @id @default(cuid())
+  nome      String
+  email     String   @unique
+  telefone  String
+  endereco  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  veiculos  Veiculo[]
+  ordens    OrdemServico[]
+
+  @@map("clientes")
+}
+
+model Veiculo {
+  id          String   @id @default(cuid())
+  marca       String
+  modelo      String
+  ano         Int
+  placa       String   @unique
+  cor         String?
+  observacoes String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  clienteId String
+  cliente   Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  ordens    OrdemServico[]
+
+  @@map("veiculos")
+}
+
+model OrdemServico {
+  id          String   @id @default(cuid())
+  numero      String   @unique
+  descricao   String
+  status      StatusOrdem @default(ABERTA)
+  prioridade  Prioridade @default(MEDIA)
+  valorTotal  Decimal  @default(0)
+  dataAbertura DateTime @default(now())
+  dataFechamento DateTime?
+  observacoes String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  clienteId String
+  cliente   Cliente @relation(fields: [clienteId], references: [id])
+  veiculoId String
+  veiculo   Veiculo @relation(fields: [veiculoId], references: [id])
+  itens     ItemOrdemServico[]
+
+  @@map("ordens_servico")
+}
+
+model ItemOrdemServico {
+  id       String @id @default(cuid())
+  descricao String
+  quantidade Int    @default(1)
+  valorUnitario Decimal
+  valorTotal   Decimal
+  observacoes  String?
+
+  // Relacionamentos
+  ordemId String
+  ordem   OrdemServico @relation(fields: [ordemId], references: [id], onDelete: Cascade)
+
+  @@map("itens_ordem_servico")
+}
+
+model Produto {
+  id          String   @id @default(cuid())
+  nome        String
+  descricao   String?
+  codigo      String   @unique
+  preco       Decimal
+  quantidade  Int      @default(0)
+  quantidadeMinima Int @default(0)
+  categoria   String?
+  fornecedor  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("produtos")
+}
+
+enum StatusOrdem {
+  ABERTA
+  EM_ANDAMENTO
+  AGUARDANDO_PECAS
+  FINALIZADA
+  CANCELADA
+}
+
+enum Prioridade {
+  BAIXA
+  MEDIA
+  ALTA
+  URGENTE
+}

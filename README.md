@@ -1,73 +1,258 @@
-# Welcome to your Lovable project
+# Mech Magic Dash - Sistema de Gestão para Oficina Mecânica
 
-## Project info
+Sistema completo de gestão para oficinas mecânicas construído com Next.js 15, Prisma, PostgreSQL e SWR, seguindo os princípios SOLID e totalmente responsivo para mobile.
 
-**URL**: https://lovable.dev/projects/35d28ad8-9bd5-4ffd-9cee-c37b19a151c7
+## 🚀 Tecnologias Utilizadas
 
-## How can I edit this code?
+- **Frontend**: Next.js 15, React 18, TypeScript
+- **Styling**: Tailwind CSS, Radix UI
+- **Backend**: Next.js API Routes
+- **Database**: PostgreSQL com Prisma ORM
+- **State Management**: SWR para cache e sincronização
+- **Icons**: Lucide React
+- **Design**: Mobile-first, responsivo
 
-There are several ways of editing your application.
+## 📋 Funcionalidades
 
-**Use Lovable**
+- **Dashboard**: Visão geral com estatísticas e alertas
+- **Clientes**: Gestão completa de clientes e histórico
+- **Ordens de Serviço**: Criação e acompanhamento de ordens
+- **Estoque**: Controle de produtos e alertas de estoque baixo
+- **Configurações**: Configurações do sistema
+- **Responsivo**: Interface otimizada para mobile e desktop
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/35d28ad8-9bd5-4ffd-9cee-c37b19a151c7) and start prompting.
+## 🏗️ Arquitetura SOLID
 
-Changes made via Lovable will be committed automatically to this repo.
+### Single Responsibility Principle (SRP)
 
-**Use your preferred IDE**
+- Cada classe tem uma única responsabilidade
+- Serviços separados por domínio (ClienteService, OrdemService, etc.)
+- Componentes com responsabilidades específicas
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Open/Closed Principle (OCP)
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- Interfaces bem definidas para extensão
+- Hooks SWR reutilizáveis e extensíveis
 
-Follow these steps:
+### Liskov Substitution Principle (LSP)
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+- Interfaces consistentes entre serviços
+- Tipos bem definidos para todas as entidades
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Interface Segregation Principle (ISP)
 
-# Step 3: Install the necessary dependencies.
-npm i
+- Interfaces específicas para cada operação
+- Hooks especializados por funcionalidade
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+### Dependency Inversion Principle (DIP)
+
+- Dependência de abstrações (interfaces)
+- Injeção de dependências via hooks
+
+## 📱 Design Responsivo
+
+- **Mobile-first**: Design otimizado para dispositivos móveis
+- **Breakpoints**: sm, md, lg, xl para diferentes tamanhos de tela
+- **Componentes adaptativos**: Layout que se ajusta automaticamente
+- **Touch-friendly**: Interface otimizada para toque
+
+## 🛠️ Instalação e Configuração
+
+### Pré-requisitos
+
+- Node.js 18+
+- PostgreSQL
+- npm ou yarn
+
+### 1. Clone o repositório
+
+```bash
+git clone <repository-url>
+cd mech-magic-dash
+```
+
+### 2. Instale as dependências
+
+```bash
+npm install
+```
+
+### 3. Configure o banco de dados
+
+Crie um arquivo `.env.local` na raiz do projeto:
+
+```env
+DATABASE_URL="postgresql://username:password@localhost:5432/mech_magic_dash?schema=public"
+NEXTAUTH_SECRET="your-secret-here"
+NEXTAUTH_URL="http://localhost:3000"
+```
+
+### 4. Configure o Prisma
+
+```bash
+# Gere o cliente Prisma
+npx prisma generate
+
+# Execute as migrações
+npx prisma db push
+
+# Popule o banco com dados de exemplo
+npm run db:seed
+```
+
+### 5. Execute o projeto
+
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+O projeto estará disponível em `http://localhost:3000`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 📁 Estrutura do Projeto
 
-**Use GitHub Codespaces**
+```
+src/
+├── app/                    # App Router do Next.js
+│   ├── (dashboard)/       # Grupo de rotas do dashboard
+│   ├── api/               # API Routes
+│   └── globals.css        # Estilos globais
+├── components/            # Componentes reutilizáveis
+│   ├── ui/               # Componentes base (Radix UI)
+│   └── providers.tsx     # Providers (SWR, Theme)
+├── hooks/                # Hooks customizados (SWR)
+├── lib/                  # Utilitários e configurações
+│   ├── api.ts           # Cliente API
+│   └── prisma.ts        # Cliente Prisma
+└── types/               # Definições de tipos
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🔧 Scripts Disponíveis
 
-## What technologies are used for this project?
+```bash
+# Desenvolvimento
+npm run dev
 
-This project is built with:
+# Build para produção
+npm run build
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+# Executar em produção
+npm run start
 
-## How can I deploy this project?
+# Linting
+npm run lint
 
-Simply open [Lovable](https://lovable.dev/projects/35d28ad8-9bd5-4ffd-9cee-c37b19a151c7) and click on Share -> Publish.
+# Banco de dados
+npm run db:generate    # Gerar cliente Prisma
+npm run db:push        # Aplicar mudanças no banco
+npm run db:studio      # Abrir Prisma Studio
+npm run db:migrate     # Criar migração
+npm run db:seed        # Popular banco com dados
+```
 
-## Can I connect a custom domain to my Lovable project?
+## 📊 API Endpoints
 
-Yes, you can!
+### Clientes
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+- `GET /api/clientes` - Listar clientes
+- `POST /api/clientes` - Criar cliente
+- `GET /api/clientes/[id]` - Buscar cliente
+- `PUT /api/clientes/[id]` - Atualizar cliente
+- `DELETE /api/clientes/[id]` - Excluir cliente
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+### Ordens de Serviço
+
+- `GET /api/ordens` - Listar ordens
+- `POST /api/ordens` - Criar ordem
+- http://localhost:3000/api/ordens/[id] - Gerenciar ordem específica
+
+### Produtos
+
+- `GET /api/produtos` - Listar produtos
+- `POST /api/produtos` - Criar produto
+- `GET /api/produtos/estoque-baixo` - Produtos com estoque baixo
+
+### Dashboard
+
+- `GET /api/dashboard` - Dados do dashboard
+
+## 🎨 Componentes UI
+
+O projeto utiliza uma biblioteca de componentes baseada no Radix UI com Tailwind CSS:
+
+- **Cards**: Para exibir informações organizadas
+- **Buttons**: Botões com variantes e tamanhos
+- **Forms**: Componentes de formulário com validação
+- **Navigation**: Sidebar responsiva
+- **Tables**: Tabelas responsivas
+- **Modals**: Dialogs e modais
+- **Loading**: Skeletons e estados de carregamento
+
+## 📱 Responsividade
+
+### Breakpoints
+
+- **sm**: 640px+
+- **md**: 768px+
+- **lg**: 1024px+
+- **xl**: 1280px+
+
+### Classes Utilitárias
+
+- `container-mobile`: Container responsivo
+- `text-responsive`: Texto que se adapta ao tamanho
+- `grid-responsive`: Grid que se adapta
+- `flex-mobile`: Flex que vira coluna no mobile
+
+## 🔄 Gerenciamento de Estado
+
+### SWR Features
+
+- **Cache automático**: Dados em cache para melhor performance
+- **Revalidação**: Atualização automática dos dados
+- **Otimistic updates**: Atualizações otimistas
+- **Error handling**: Tratamento de erros
+- **Loading states**: Estados de carregamento
+
+### Hooks Customizados
+
+- `useClientes()`: Gerenciar clientes
+- `useOrdens()`: Gerenciar ordens de serviço
+- `useProdutos()`: Gerenciar produtos
+- `useDashboard()`: Dados do dashboard
+
+## 🚀 Deploy
+
+### Vercel (Recomendado)
+
+1. Conecte seu repositório ao Vercel
+2. Configure as variáveis de ambiente
+3. Deploy automático
+
+### Outras Plataformas
+
+O projeto é compatível com qualquer plataforma que suporte Next.js:
+
+- Netlify
+- Railway
+- DigitalOcean
+- AWS
+
+## 🤝 Contribuição
+
+1. Fork o projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
+
+## 📝 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
+
+## 📞 Suporte
+
+Para suporte, entre em contato através dos issues do GitHub ou email.
+
+---
+
+Desenvolvido com ❤️ usando Next.js, Prisma e SWR
