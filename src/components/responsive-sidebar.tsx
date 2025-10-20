@@ -32,64 +32,76 @@ import {
   DollarSign,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { MobileUserDropdown } from "@/components/user/mobile-user-dropdown";
+import { useAuth } from "@/hooks/use-auth";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const navigationItems = [
-  {
-    title: "Dashboard",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-    description: "Visão geral do sistema",
-  },
-  {
-    title: "Clientes",
-    href: "/clientes",
-    icon: Users,
-    description: "Gerenciar clientes",
-  },
-  {
-    title: "Veículos",
-    href: "/veiculos",
-    icon: Car,
-    description: "Gerenciar veículos",
-  },
-  {
-    title: "Agendamentos",
-    href: "/agendamentos",
-    icon: Calendar,
-    description: "Agendar serviços",
-  },
-  {
-    title: "Ordens",
-    href: "/ordens",
-    icon: Wrench,
-    description: "Gerenciar ordens",
-  },
-  {
-    title: "Estoque",
-    href: "/estoque",
-    icon: Package,
-    description: "Controle de estoque",
-  },
-  {
-    title: "Financeiro",
-    href: "/financeiro",
-    icon: DollarSign,
-    description: "Controle financeiro",
-  },
-];
+const navigationItems: Array<{
+  title: string;
+  href: string;
+  icon: any;
+  description: string;
+}> = [
+    {
+      title: "Dashboard",
+      href: "/dashboard",
+      icon: LayoutDashboard,
+      description: "Visão geral do sistema",
+    },
+    {
+      title: "Clientes",
+      href: "/clientes",
+      icon: Users,
+      description: "Gerenciar clientes",
+    },
+    {
+      title: "Veículos",
+      href: "/veiculos",
+      icon: Car,
+      description: "Gerenciar veículos",
+    },
+    {
+      title: "Agendamentos",
+      href: "/agendamentos",
+      icon: Calendar,
+      description: "Agendar serviços",
+    },
+    {
+      title: "Ordens",
+      href: "/ordens",
+      icon: Wrench,
+      description: "Gerenciar ordens",
+    },
+    {
+      title: "Estoque",
+      href: "/estoque",
+      icon: Package,
+      description: "Controle de estoque",
+    },
+    {
+      title: "Financeiro",
+      href: "/financeiro",
+      icon: DollarSign,
+      description: "Controle financeiro",
+    },
+  ];
 
-const quickActions = [
-  {
-    title: "Início",
-    href: "/",
-    icon: Home,
-  },
-  {
-    title: "Configurações",
-    href: "/configuracoes",
-    icon: Settings,
-  },
-];
+const quickActions: Array<{
+  title: string;
+  href: string;
+  icon: any;
+}> = [
+    {
+      title: "Início",
+      href: "/",
+      icon: Home,
+    },
+    {
+      title: "Configurações",
+      href: "/configuracoes",
+      icon: Settings,
+    },
+  ];
 
 // Função para obter a página ativa baseada no pathname
 const getActivePage = (pathname: string) => {
@@ -102,6 +114,7 @@ export function MobileFloatingDock() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const activePage = getActivePage(pathname);
+  const { user, isLoading } = useAuth();
 
   return (
     <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 md:hidden">
@@ -152,7 +165,7 @@ export function MobileFloatingDock() {
                     return (
                       <Link
                         key={item.href}
-                        href={item.href}
+                        href={item.href as any}
                         onClick={() => setOpen(false)}
                         className={cn(
                           "flex items-center gap-4 rounded-2xl px-4 py-4 text-sm font-medium transition-all duration-300 group",
@@ -212,6 +225,15 @@ export function MobileFloatingDock() {
                 </Link>
               );
             })}
+
+            {/* User Dropdown */}
+            {isLoading ? (
+              <div className="h-14 w-14 rounded-2xl flex items-center justify-center">
+                <Skeleton className="h-8 w-8 rounded-full" />
+              </div>
+            ) : user ? (
+              <MobileUserDropdown user={user} />
+            ) : null}
           </div>
         </div>
       </div>

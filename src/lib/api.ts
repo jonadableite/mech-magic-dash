@@ -83,3 +83,13 @@ export class ApiClient {
 
 // Instância singleton do cliente API
 export const apiClient = new ApiClient();
+
+// Better Auth client helpers (rotas expostas pelo handler do Better Auth)
+export const authApi = {
+  signup: (data: { email: string; password: string; name?: string }) =>
+    apiClient.post("/auth/sign-up", data),
+  signin: (data: { email: string; password: string }) =>
+    apiClient.post("/auth/sign-in", data),
+  session: () => apiClient.get("/auth/session"),
+  signout: () => apiClient.post("/auth/sign-out", {}),
+};

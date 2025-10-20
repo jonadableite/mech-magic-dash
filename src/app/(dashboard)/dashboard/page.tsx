@@ -4,9 +4,46 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Wrench, Package, TrendingUp, DollarSign, AlertCircle } from "lucide-react";
 import { useDashboard } from "@/hooks/use-dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function DashboardPage() {
+  const { user, isLoading: authLoading, isAuthenticated, isInitialized } = useAuth();
   const { dashboardData, isLoading, error } = useDashboard();
+
+  // Debug: mostrar informações de autenticação (remover em produção)
+  console.log("Dashboard - authLoading:", authLoading);
+  console.log("Dashboard - isAuthenticated:", isAuthenticated);
+  console.log("Dashboard - isInitialized:", isInitialized);
+  console.log("Dashboard - user:", user);
+  console.log("Dashboard - isLoading:", isLoading);
+  console.log("Dashboard - error:", error);
+  console.log("Dashboard - data:", dashboardData);
+
+  // Se não está inicializado ou está carregando, mostrar loading
+  if (!isInitialized || authLoading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <DebugAuth />
+        <div className="text-center">
+          <p>Carregando autenticação...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Se não está autenticado, mostrar mensagem
+  if (!isAuthenticated) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <DebugAuth />
+        <Card>
+          <CardContent className="p-6">
+            <p className="text-destructive">Usuário não autenticado</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return <DashboardSkeleton />;
@@ -22,6 +59,9 @@ export default function DashboardPage() {
         <Card>
           <CardContent className="p-6">
             <p className="text-destructive">Erro ao carregar dados do dashboard</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Erro: {error?.message || "Erro desconhecido"}
+            </p>
           </CardContent>
         </Card>
       </div>

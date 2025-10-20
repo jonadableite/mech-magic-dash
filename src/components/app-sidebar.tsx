@@ -1,9 +1,12 @@
 "use client";
 
-import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem, SidebarTrigger } from "@/components/ui/sidebar";
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem, SidebarTrigger } from "@/components/ui/sidebar";
 import { LayoutDashboard, Users, Wrench, Package, Settings, Car, Calendar, DollarSign } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { UserDropdown } from "@/components/user/user-dropdown";
+import { useAuth } from "@/hooks/use-auth";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const menuItems = [
   {
@@ -50,6 +53,7 @@ const menuItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { user, isLoading } = useAuth();
 
   return (
     <Sidebar className="border-r border-sidebar-border bg-sidebar-background backdrop-blur-md">
@@ -66,6 +70,7 @@ export function AppSidebar() {
           </div>
         </div>
       </SidebarHeader>
+
       <SidebarContent className="p-3">
         <SidebarMenu className="space-y-2">
           {menuItems.map((item, index) => (
@@ -80,7 +85,7 @@ export function AppSidebar() {
                 tooltip={item.title}
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
-                <Link href={item.url} className="flex items-center gap-3 w-full">
+                <Link href={item.url as any} className="flex items-center gap-3 w-full">
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-accent/50 transition-colors duration-200 group-hover:bg-sidebar-accent">
                     <item.icon className="h-4 w-4 transition-transform duration-200 group-hover:scale-110 text-sidebar-foreground" />
                   </div>
@@ -90,15 +95,34 @@ export function AppSidebar() {
             </SidebarMenuItem>
           ))}
         </SidebarMenu>
+      </SidebarContent>
 
-        {/* Footer da sidebar */}
-        <div className="mt-auto p-3 border-t border-sidebar-border">
-          <div className="text-xs text-sidebar-foreground/70 text-center">
+      <SidebarFooter className="border-t border-sidebar-border p-3">
+        <div className="space-y-3">
+          {/* User Dropdown */}
+          {isLoading ? (
+            <div className="flex items-center space-x-3 p-2">
+              <Skeleton className="h-8 w-8 rounded-full" />
+              <div className="space-y-1 flex-1">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-3 w-16" />
+              </div>
+            </div>
+          ) : user ? (
+            <UserDropdown user={user} className="w-full" />
+          ) : (
+            <div className="text-center text-xs text-sidebar-foreground/70">
+              <p>Usuário não encontrado</p>
+            </div>
+          )}
+
+          {/* Version Info */}
+          <div className="text-xs text-sidebar-foreground/70 text-center pt-2 border-t border-sidebar-border/50">
             <p className="font-medium">Versão 1.0.0</p>
-            <p>© 2024 Mech Magic</p>
+            <p>© 2025 Mech Magic</p>
           </div>
         </div>
-      </SidebarContent>
+      </SidebarFooter>
     </Sidebar>
   );
 }

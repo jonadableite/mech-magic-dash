@@ -1,251 +1,228 @@
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("Iniciando seed do banco de dados...");
+  console.log("🌱 Iniciando seed do banco de dados...");
 
-  // Criar clientes
-  const clientes = await Promise.all([
-    prisma.cliente.create({
-      data: {
-        nome: "João Silva",
-        email: "joao.silva@email.com",
-        telefone: "(11) 98765-4321",
-        endereco: "Rua das Flores, 123 - São Paulo/SP",
-      },
-    }),
-    prisma.cliente.create({
-      data: {
-        nome: "Maria Santos",
-        email: "maria.santos@email.com",
-        telefone: "(11) 97654-3210",
-        endereco: "Av. Paulista, 456 - São Paulo/SP",
-      },
-    }),
-    prisma.cliente.create({
-      data: {
-        nome: "Pedro Oliveira",
-        email: "pedro.oliveira@email.com",
-        telefone: "(11) 96543-2109",
-        endereco: "Rua Augusta, 789 - São Paulo/SP",
-      },
-    }),
-    prisma.cliente.create({
-      data: {
-        nome: "Ana Costa",
-        email: "ana.costa@email.com",
-        telefone: "(11) 95432-1098",
-        endereco: "Rua Oscar Freire, 321 - São Paulo/SP",
-      },
-    }),
-  ]);
+  // Criar usuários de exemplo
+  const adminPassword = await bcrypt.hash("123456", 12);
+  const userPassword = await bcrypt.hash("123456", 12);
 
-  console.log(`${clientes.length} clientes criados`);
+  const admin = await prisma.usuario.upsert({
+    where: { email: "admin@oficina.com" },
+    update: {},
+    create: {
+      nome: "Administrador",
+      email: "admin@oficina.com",
+      senha: adminPassword,
+      role: "ADMIN",
+    },
+  });
 
-  // Criar veículos
-  const veiculos = await Promise.all([
-    prisma.veiculo.create({
-      data: {
-        marca: "Honda",
-        modelo: "Civic",
-        ano: 2020,
+  const user = await prisma.usuario.upsert({
+    where: { email: "user@oficina.com" },
+    update: {},
+    create: {
+      nome: "Usuário Padrão",
+      email: "user@oficina.com",
+      senha: userPassword,
+      role: "USUARIO",
+    },
+  });
+
+  console.log("✅ Usuários criados:", { admin: admin.email, user: user.email });
+
+  // Criar dados de exemplo para o admin
+  const clienteAdmin = await prisma.cliente.upsert({
+    where: {
+      email_usuarioId: {
+        email: "joao@email.com",
+        usuarioId: admin.id,
+      },
+    },
+    update: {},
+    create: {
+      nome: "João Silva",
+      email: "joao@email.com",
+      telefone: "(11) 99999-9999",
+      endereco: "Rua das Flores, 123",
+      usuarioId: admin.id,
+    },
+  });
+
+  const veiculoAdmin = await prisma.veiculo.upsert({
+    where: {
+      placa_usuarioId: {
         placa: "ABC-1234",
-        cor: "Prata",
-        observacoes: "Veículo em bom estado",
-        clienteId: clientes[0].id,
+        usuarioId: admin.id,
       },
-    }),
-    prisma.veiculo.create({
-      data: {
-        marca: "Toyota",
-        modelo: "Corolla",
-        ano: 2019,
-        placa: "DEF-5678",
-        cor: "Branco",
-        observacoes: "Necessita revisão",
-        clienteId: clientes[1].id,
-      },
-    }),
-    prisma.veiculo.create({
-      data: {
-        marca: "Ford",
-        modelo: "Focus",
-        ano: 2021,
-        placa: "GHI-9012",
-        cor: "Azul",
-        clienteId: clientes[2].id,
-      },
-    }),
-    prisma.veiculo.create({
-      data: {
-        marca: "Volkswagen",
-        modelo: "Golf",
-        ano: 2018,
-        placa: "JKL-3456",
-        cor: "Preto",
-        observacoes: "Veículo com histórico de manutenção",
-        clienteId: clientes[3].id,
-      },
-    }),
-  ]);
+    },
+    update: {},
+    create: {
+      marca: "Toyota",
+      modelo: "Corolla",
+      ano: 2020,
+      placa: "ABC-1234",
+      cor: "Prata",
+      clienteId: clienteAdmin.id,
+      usuarioId: admin.id,
+    },
+  });
 
-  console.log(`${veiculos.length} veículos criados`);
+  const produtoAdmin = await prisma.produto.upsert({
+    where: {
+      codigo_usuarioId: {
+        codigo: "OLEO001",
+        usuarioId: admin.id,
+      },
+    },
+    update: {},
+    create: {
+      nome: "Óleo Motor 5W30",
+      descricao: "Óleo sintético para motor",
+      codigo: "OLEO001",
+      preco: 45.9,
+      quantidade: 50,
+      quantidadeMinima: 10,
+      categoria: "Lubrificantes",
+      fornecedor: "Petrobras",
+      usuarioId: admin.id,
+    },
+  });
 
-  // Criar produtos
-  const produtos = await Promise.all([
-    prisma.produto.create({
-      data: {
-        nome: "Óleo de Motor 5W30",
-        descricao: "Óleo sintético para motor",
-        codigo: "OLEO-5W30",
-        preco: 89.9,
-        quantidade: 5,
-        quantidadeMinima: 20,
-        categoria: "Óleos",
-        fornecedor: "Shell",
+  const ordemAdmin = await prisma.ordemServico.upsert({
+    where: {
+      numero_usuarioId: {
+        numero: "OS-001",
+        usuarioId: admin.id,
       },
-    }),
-    prisma.produto.create({
-      data: {
-        nome: "Filtro de Ar",
-        descricao: "Filtro de ar para motor",
-        codigo: "FILTRO-AR",
-        preco: 45.5,
-        quantidade: 8,
-        quantidadeMinima: 15,
-        categoria: "Filtros",
-        fornecedor: "Mann",
-      },
-    }),
-    prisma.produto.create({
-      data: {
-        nome: "Pastilha de Freio",
-        descricao: "Pastilha de freio dianteira",
-        codigo: "PASTILHA-FR",
-        preco: 125.0,
-        quantidade: 3,
-        quantidadeMinima: 10,
-        categoria: "Freios",
-        fornecedor: "Brembo",
-      },
-    }),
-    prisma.produto.create({
-      data: {
-        nome: "Bateria 60Ah",
-        descricao: "Bateria automotiva 60Ah",
-        codigo: "BATERIA-60",
-        preco: 299.9,
-        quantidade: 12,
-        quantidadeMinima: 8,
-        categoria: "Elétrica",
-        fornecedor: "Moura",
-      },
-    }),
-    prisma.produto.create({
-      data: {
-        nome: "Pneu 205/55 R16",
-        descricao: "Pneu radial 205/55 R16",
-        codigo: "PNEU-20555",
-        preco: 399.9,
-        quantidade: 25,
-        quantidadeMinima: 12,
-        categoria: "Pneus",
-        fornecedor: "Michelin",
-      },
-    }),
-  ]);
+    },
+    update: {},
+    create: {
+      numero: "OS-001",
+      descricao: "Troca de óleo e filtro",
+      status: "ABERTA",
+      prioridade: "MEDIA",
+      valorTotal: 120.0,
+      clienteId: clienteAdmin.id,
+      veiculoId: veiculoAdmin.id,
+      usuarioId: admin.id,
+    },
+  });
 
-  console.log(`${produtos.length} produtos criados`);
+  const agendamentoAdmin = await prisma.agendamento.create({
+    data: {
+      dataHora: new Date("2024-01-15T10:00:00Z"),
+      descricao: "Revisão preventiva",
+      status: "AGENDADO",
+      clienteId: clienteAdmin.id,
+      veiculoId: veiculoAdmin.id,
+      usuarioId: admin.id,
+    },
+  });
 
-  // Criar ordens de serviço
-  const ordens = await Promise.all([
-    prisma.ordemServico.create({
-      data: {
-        numero: "#OS-0001",
-        descricao: "Troca de óleo e filtro",
-        status: "EM_ANDAMENTO",
-        prioridade: "ALTA",
-        valorTotal: 135.4,
-        dataAbertura: new Date(),
-        observacoes: "Cliente solicitou urgência",
-        clienteId: clientes[0].id,
-        veiculoId: veiculos[0].id,
-        itens: {
-          create: [
-            {
-              descricao: "Óleo de Motor 5W30",
-              quantidade: 1,
-              valorUnitario: 89.9,
-              valorTotal: 89.9,
-            },
-            {
-              descricao: "Filtro de Óleo",
-              quantidade: 1,
-              valorUnitario: 45.5,
-              valorTotal: 45.5,
-            },
-          ],
-        },
-      },
-    }),
-    prisma.ordemServico.create({
-      data: {
-        numero: "#OS-0002",
-        descricao: "Revisão completa",
-        status: "AGUARDANDO_PECAS",
-        prioridade: "MEDIA",
-        valorTotal: 0,
-        dataAbertura: new Date(),
-        clienteId: clientes[1].id,
-        veiculoId: veiculos[1].id,
-      },
-    }),
-    prisma.ordemServico.create({
-      data: {
-        numero: "#OS-0003",
-        descricao: "Troca de pastilhas de freio",
-        status: "FINALIZADA",
-        prioridade: "ALTA",
-        valorTotal: 250.0,
-        dataAbertura: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-        dataFechamento: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-        clienteId: clientes[2].id,
-        veiculoId: veiculos[2].id,
-        itens: {
-          create: [
-            {
-              descricao: "Pastilha de Freio Dianteira",
-              quantidade: 2,
-              valorUnitario: 125.0,
-              valorTotal: 250.0,
-            },
-          ],
-        },
-      },
-    }),
-    prisma.ordemServico.create({
-      data: {
-        numero: "#OS-0004",
-        descricao: "Diagnóstico elétrico",
-        status: "ABERTA",
-        prioridade: "BAIXA",
-        valorTotal: 0,
-        dataAbertura: new Date(),
-        clienteId: clientes[3].id,
-        veiculoId: veiculos[3].id,
-      },
-    }),
-  ]);
+  const caixaAdmin = await prisma.caixa.create({
+    data: {
+      valorInicial: 1000.0,
+      status: "ABERTO",
+      usuarioId: admin.id,
+    },
+  });
 
-  console.log(`${ordens.length} ordens de serviço criadas`);
+  const contaPagarAdmin = await prisma.contaPagar.create({
+    data: {
+      descricao: "Aluguel da oficina",
+      valor: 2500.0,
+      dataVencimento: new Date("2024-01-31"),
+      categoria: "MANUTENCAO",
+      fornecedor: "Imobiliária XYZ",
+      usuarioId: admin.id,
+    },
+  });
 
-  console.log("Seed concluído com sucesso!");
+  const contaReceberAdmin = await prisma.contaReceber.create({
+    data: {
+      descricao: "Serviço de manutenção",
+      valor: 500.0,
+      dataVencimento: new Date("2024-01-20"),
+      categoria: "CLIENTES",
+      clienteId: clienteAdmin.id,
+      usuarioId: admin.id,
+    },
+  });
+
+  // Criar dados de exemplo para o usuário comum
+  const clienteUser = await prisma.cliente.upsert({
+    where: {
+      email_usuarioId: {
+        email: "maria@email.com",
+        usuarioId: user.id,
+      },
+    },
+    update: {},
+    create: {
+      nome: "Maria Santos",
+      email: "maria@email.com",
+      telefone: "(11) 88888-8888",
+      endereco: "Av. Principal, 456",
+      usuarioId: user.id,
+    },
+  });
+
+  const veiculoUser = await prisma.veiculo.upsert({
+    where: {
+      placa_usuarioId: {
+        placa: "XYZ-5678",
+        usuarioId: user.id,
+      },
+    },
+    update: {},
+    create: {
+      marca: "Honda",
+      modelo: "Civic",
+      ano: 2019,
+      placa: "XYZ-5678",
+      cor: "Branco",
+      clienteId: clienteUser.id,
+      usuarioId: user.id,
+    },
+  });
+
+  const produtoUser = await prisma.produto.upsert({
+    where: {
+      codigo_usuarioId: {
+        codigo: "FILTRO001",
+        usuarioId: user.id,
+      },
+    },
+    update: {},
+    create: {
+      nome: "Filtro de Ar",
+      descricao: "Filtro de ar condicionado",
+      codigo: "FILTRO001",
+      preco: 25.5,
+      quantidade: 30,
+      quantidadeMinima: 5,
+      categoria: "Filtros",
+      fornecedor: "Mann Filter",
+      usuarioId: user.id,
+    },
+  });
+
+  console.log("✅ Dados de exemplo criados para ambos os usuários");
+  console.log("📊 Resumo:");
+  console.log(
+    `   - Admin: 1 cliente, 1 veículo, 1 produto, 1 ordem, 1 agendamento, 1 caixa`
+  );
+  console.log(`   - User: 1 cliente, 1 veículo, 1 produto`);
+  console.log("🔒 Todos os dados estão isolados por usuário!");
 }
 
 main()
   .catch((e) => {
-    console.error("Erro durante o seed:", e);
+    console.error("❌ Erro no seed:", e);
     process.exit(1);
   })
   .finally(async () => {

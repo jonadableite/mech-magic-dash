@@ -323,6 +323,78 @@ export function useDeleteCaixa() {
   };
 }
 
+// Hooks específicos para a página financeira
+export function useAbrirCaixa() {
+  const { trigger, isMutating, error } = useSWRMutation(
+    "/api/caixa",
+    (url, { arg }: { arg: CreateCaixaData }) => CaixaService.createCaixa(arg)
+  );
+
+  return {
+    trigger,
+    isMutating,
+    error,
+  };
+}
+
+export function useFecharCaixa(caixaId: string) {
+  const { trigger, isMutating, error } = useSWRMutation(
+    `/api/caixa/${caixaId}/fechar`,
+    (url, { arg }: { arg: { valorFinal: number } }) =>
+      CaixaService.updateCaixa(caixaId, {
+        valorFinal: arg.valorFinal,
+        status: "FECHADO",
+      })
+  );
+
+  return {
+    trigger,
+    isMutating,
+    error,
+  };
+}
+
+export function useAddMovimentacao(caixaId: string) {
+  const { trigger, isMutating, error } = useSWRMutation(
+    `/api/caixa/${caixaId}/movimentacoes`,
+    (url, { arg }: { arg: CreateMovimentacaoData }) =>
+      CaixaService.createMovimentacao(caixaId, arg)
+  );
+
+  return {
+    trigger,
+    isMutating,
+    error,
+  };
+}
+
+export function useUpdateMovimentacao(caixaId: string, movimentacaoId: string) {
+  const { trigger, isMutating, error } = useSWRMutation(
+    `/api/caixa/${caixaId}/movimentacoes/${movimentacaoId}`,
+    (url, { arg }: { arg: UpdateMovimentacaoData }) =>
+      CaixaService.updateMovimentacao(caixaId, movimentacaoId, arg)
+  );
+
+  return {
+    trigger,
+    isMutating,
+    error,
+  };
+}
+
+export function useDeleteMovimentacao(caixaId: string, movimentacaoId: string) {
+  const { trigger, isMutating, error } = useSWRMutation(
+    `/api/caixa/${caixaId}/movimentacoes/${movimentacaoId}`,
+    () => CaixaService.deleteMovimentacao(caixaId, movimentacaoId)
+  );
+
+  return {
+    trigger,
+    isMutating,
+    error,
+  };
+}
+
 export function useCreateMovimentacao() {
   const { trigger, isMutating, error } = useSWRMutation(
     "/api/caixa",
@@ -335,45 +407,6 @@ export function useCreateMovimentacao() {
   return {
     createMovimentacao: trigger,
     isCreating: isMutating,
-    error,
-  };
-}
-
-export function useUpdateMovimentacao() {
-  const { trigger, isMutating, error } = useSWRMutation(
-    "/api/caixa",
-    (
-      url,
-      {
-        arg,
-      }: {
-        arg: {
-          caixaId: string;
-          movimentacaoId: string;
-          data: UpdateMovimentacaoData;
-        };
-      }
-    ) =>
-      CaixaService.updateMovimentacao(arg.caixaId, arg.movimentacaoId, arg.data)
-  );
-
-  return {
-    updateMovimentacao: trigger,
-    isUpdating: isMutating,
-    error,
-  };
-}
-
-export function useDeleteMovimentacao() {
-  const { trigger, isMutating, error } = useSWRMutation(
-    "/api/caixa",
-    (url, { arg }: { arg: { caixaId: string; movimentacaoId: string } }) =>
-      CaixaService.deleteMovimentacao(arg.caixaId, arg.movimentacaoId)
-  );
-
-  return {
-    deleteMovimentacao: trigger,
-    isDeleting: isMutating,
     error,
   };
 }

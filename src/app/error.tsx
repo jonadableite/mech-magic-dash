@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
@@ -37,9 +38,9 @@ export default function Error({
               Tentar Novamente
             </Button>
             <Button variant="outline" asChild className="flex-1">
-              <a href="/dashboard">
+              <Link href="/dashboard">
                 Ir para Dashboard
-              </a>
+              </Link>
             </Button>
           </div>
           {process.env.NODE_ENV === 'development' && (

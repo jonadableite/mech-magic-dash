@@ -3,78 +3,50 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
-    const [
-      totalProdutos,
-      totalValor,
-      produtosEstoqueBaixo,
-      produtosSemEstoque,
-      categorias,
-    ] = await Promise.all([
-      // Total de produtos
-      prisma.produto.count(),
+    // Buscar todos os produtos de uma vez
+    const produtos = await prisma.produto.findMany({
+      select: {
+        preco: true,
+        quantidade: true,
+        quantidadeMinima: true,
+        categoria: true,
+      },
+    });
 
-      // Valor total do estoque (preço * quantidade)
-      prisma.produto.findMany({
-        select: {
-          preco: true,
-          quantidade: true,
-        },
-      }),
+    // Calcular estatísticas
+    const totalProdutos = produtos.length;
 
-      // Produtos com estoque baixo
-      prisma.produto.count({
-        where: {
-          quantidade: {
-            lte: prisma.produto.fields.quantidadeMinima,
-          },
-          quantidade: {
-            gt: 0,
-          },
-        },
-      }),
-
-      // Produtos sem estoque
-      prisma.produto.count({
-        where: {
-          quantidade: 0,
-        },
-      }),
-
-      // Categorias com quantidade
-      prisma.produto.groupBy({
-        by: ["categoria"],
-        _count: {
-          categoria: true,
-        },
-        where: {
-          categoria: {
-            not: null,
-          },
-        },
-        orderBy: {
-          _count: {
-            categoria: "desc",
-          },
-        },
-      }),
-    ]);
-
-    // Calcular valor total do estoque (preço * quantidade)
-    const valorTotal = totalValor.reduce((total, produto) => {
+    const valorTotal = produtos.reduce((total, produto) => {
       const preco = Number(produto.preco);
       const quantidade = Number(produto.quantidade);
       return total + preco * quantidade;
     }, 0);
+
+    const produtosEstoqueBaixo = produtos.filter(
+      (p) => p.quantidade <= p.quantidadeMinima && p.quantidade > 0
+    ).length;
+
+    const produtosSemEstoque = produtos.filter(
+      (p) => p.quantidade === 0
+    ).length;
+
+    // Agrupar por categoria
+    const categoriasMap = new Map<string, number>();
+    produtos.forEach((produto) => {
+      const categoria = produto.categoria || "Sem categoria";
+      categoriasMap.set(categoria, (categoriasMap.get(categoria) || 0) + 1);
+    });
+
+    const categorias = Array.from(categoriasMap.entries())
+      .map(([categoria, quantidade]) => ({ categoria, quantidade }))
+      .sort((a, b) => b.quantidade - a.quantidade);
 
     const stats = {
       totalProdutos,
       totalValor: valorTotal,
       produtosEstoqueBaixo,
       produtosSemEstoque,
-      categorias: categorias.map((cat) => ({
-        categoria: cat.categoria || "Sem categoria",
-        quantidade: cat._count.categoria,
-      })),
+      categorias,
     };
 
     return NextResponse.json({

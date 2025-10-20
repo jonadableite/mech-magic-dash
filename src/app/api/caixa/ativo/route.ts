@@ -1,14 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 // GET /api/caixa/ativo - Buscar caixa ativo
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const caixaAtivo = await prisma.caixa.findFirst({
       where: { status: "ABERTO" },
       include: {
         movimentacoes: {
           orderBy: { dataHora: "desc" },
+          take: 10, // Limitar a 10 movimentações recentes
         },
         usuario: {
           select: {

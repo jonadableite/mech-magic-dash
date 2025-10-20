@@ -13,18 +13,21 @@ datasource db {
 model Cliente {
   id        String   @id @default(cuid())
   nome      String
-  email     String   @unique
+  email     String
   telefone  String
   endereco  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relacionamentos
+  usuarioId String
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   veiculos  Veiculo[]
   ordens    OrdemServico[]
   agendamentos Agendamento[]
   contasReceber ContaReceber[]
 
+  @@unique([email, usuarioId])
   @@map("clientes")
 }
 
@@ -33,7 +36,7 @@ model Veiculo {
   marca       String
   modelo      String
   ano         Int
-  placa       String   @unique
+  placa       String
   cor         String?
   observacoes String?
   createdAt   DateTime @default(now())
@@ -42,15 +45,18 @@ model Veiculo {
   // Relacionamentos
   clienteId String
   cliente   Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  usuarioId String
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   ordens    OrdemServico[]
   agendamentos Agendamento[]
 
+  @@unique([placa, usuarioId])
   @@map("veiculos")
 }
 
 model OrdemServico {
   id          String   @id @default(cuid())
-  numero      String   @unique
+  numero      String
   descricao   String
   status      StatusOrdem @default(ABERTA)
   prioridade  Prioridade @default(MEDIA)
@@ -66,10 +72,13 @@ model OrdemServico {
   cliente   Cliente @relation(fields: [clienteId], references: [id])
   veiculoId String
   veiculo   Veiculo @relation(fields: [veiculoId], references: [id])
+  usuarioId String
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   itens     ItemOrdemServico[]
   movimentacoes MovimentacaoCaixa[]
   comissoes   Comissao[]
 
+  @@unique([numero, usuarioId])
   @@map("ordens_servico")
 }
 
@@ -92,7 +101,7 @@ model Produto {
   id          String   @id @default(cuid())
   nome        String
   descricao   String?
-  codigo      String   @unique
+  codigo      String
   preco       Decimal
   quantidade  Int      @default(0)
   quantidadeMinima Int @default(0)
@@ -101,6 +110,11 @@ model Produto {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // Relacionamentos
+  usuarioId String
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([codigo, usuarioId])
   @@map("produtos")
 }
 
@@ -118,6 +132,8 @@ model Agendamento {
   cliente   Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
   veiculoId String
   veiculo   Veiculo @relation(fields: [veiculoId], references: [id], onDelete: Cascade)
+  usuarioId String
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   @@map("agendamentos")
 }
@@ -205,6 +221,8 @@ model ContaPagar {
   updatedAt   DateTime @updatedAt
 
   // Relacionamentos
+  usuarioId String
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   movimentacoes MovimentacaoCaixa[]
 
   @@map("contas_pagar")
@@ -220,6 +238,8 @@ model ContaReceber {
   categoria   CategoriaConta
   clienteId   String?
   cliente     Cliente? @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+  usuarioId   String
+  usuario     Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   observacoes String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -245,6 +265,8 @@ model Comissao {
   // Relacionamentos
   ordemId     String
   ordem       OrdemServico @relation(fields: [ordemId], references: [id], onDelete: Cascade)
+  usuarioId   String
+  usuario     Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   @@map("comissoes")
 }
@@ -260,9 +282,32 @@ model Usuario {
   updatedAt DateTime @updatedAt
 
   // Relacionamentos
-  caixas    Caixa[]
+  clientes      Cliente[]
+  veiculos      Veiculo[]
+  ordens        OrdemServico[]
+  produtos      Produto[]
+  agendamentos  Agendamento[]
+  contasPagar   ContaPagar[]
+  contasReceber ContaReceber[]
+  comissoes     Comissao[]
+  caixas        Caixa[]
+  sessoes       Sessao[]
 
   @@map("usuarios")
+}
+
+model Sessao {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  usuario Usuario @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessoes")
 }
 
 // Enums Financeiros

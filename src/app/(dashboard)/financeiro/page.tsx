@@ -16,33 +16,70 @@ import {
   CreditCard,
   Receipt,
   Users,
+  Edit,
+  Trash2,
 } from "lucide-react";
-import { useCaixaAtivo, useCaixaStats } from "@/hooks/use-caixa";
+import { useCaixaAtivo, useCaixaStats, useAbrirCaixa, useFecharCaixa, useAddMovimentacao, useUpdateMovimentacao, useDeleteMovimentacao } from "@/hooks/use-caixa";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatBRL } from "@/lib/currency";
 import { ToastService } from "@/lib/toast";
+import { CaixaModal } from "@/components/caixa/caixa-modal";
+import { MovimentacaoModal } from "@/components/caixa/movimentacao-modal";
+import { RelatoriosDashboard } from "@/components/relatorios/relatorios-dashboard";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 export default function FinanceiroPage() {
   const [activeTab, setActiveTab] = useState("caixa");
+  const [isCaixaModalOpen, setIsCaixaModalOpen] = useState(false);
+  const [isMovimentacaoModalOpen, setIsMovimentacaoModalOpen] = useState(false);
+  const [editingMovimentacao, setEditingMovimentacao] = useState(null);
 
-  const { caixaAtivo, isLoading: isLoadingCaixa, error: errorCaixa } = useCaixaAtivo();
-  const { stats, isLoading: isLoadingStats, error: errorStats } = useCaixaStats(
+  const { caixaAtivo, isLoading: isLoadingCaixa, error: errorCaixa, mutate: mutateCaixaAtivo } = useCaixaAtivo();
+  const { stats, isLoading: isLoadingStats, error: errorStats, mutate: mutateStats } = useCaixaStats(
     caixaAtivo?.id || ""
   );
 
+  const { trigger: abrirCaixa, isMutating: isOpeningCaixa } = useAbrirCaixa();
+  const { trigger: fecharCaixa, isMutating: isClosingCaixa } = useFecharCaixa(caixaAtivo?.id || "");
+  const { trigger: addMovimentacao, isMutating: isAddingMovimentacao } = useAddMovimentacao(caixaAtivo?.id || "");
+  const { trigger: updateMovimentacao, isMutating: isUpdatingMovimentacao } = useUpdateMovimentacao(caixaAtivo?.id || "", "");
+  const { trigger: deleteMovimentacao, isMutating: isDeletingMovimentacao } = useDeleteMovimentacao(caixaAtivo?.id || "", "");
+
   const handleAbrirCaixa = () => {
-    // TODO: Implementar modal para abrir caixa
-    ToastService.info("Funcionalidade em desenvolvimento", "Modal de abertura de caixa será implementado em breve.");
+    setIsCaixaModalOpen(true);
   };
 
   const handleFecharCaixa = () => {
-    // TODO: Implementar modal para fechar caixa
-    ToastService.info("Funcionalidade em desenvolvimento", "Modal de fechamento de caixa será implementado em breve.");
+    setIsCaixaModalOpen(true);
   };
 
   const handleNovaMovimentacao = () => {
-    // TODO: Implementar modal para nova movimentação
-    ToastService.info("Funcionalidade em desenvolvimento", "Modal de movimentação será implementado em breve.");
+    setEditingMovimentacao(null);
+    setIsMovimentacaoModalOpen(true);
+  };
+
+  const handleEditMovimentacao = (movimentacao: any) => {
+    setEditingMovimentacao(movimentacao);
+    setIsMovimentacaoModalOpen(true);
+  };
+
+  const handleDeleteMovimentacao = async (movimentacaoId: string) => {
+    if (confirm("Tem certeza que deseja excluir esta movimentação?")) {
+      try {
+        await deleteMovimentacao({ movimentacaoId });
+        ToastService.success("Movimentação excluída com sucesso!");
+        mutateStats();
+        mutateCaixaAtivo();
+      } catch (error) {
+        ToastService.error("Erro ao excluir movimentação");
+      }
+    }
   };
 
   if (errorCaixa || errorStats) {
@@ -166,11 +203,71 @@ export default function FinanceiroPage() {
                       <Plus className="h-4 w-4" />
                       Nova Movimentação
                     </Button>
-                    <Button variant="outline" className="gap-2">
-                      <Eye className="h-4 w-4" />
-                      Ver Movimentações
-                    </Button>
                   </div>
+
+                  {/* Lista de Movimentações Recentes */}
+                  {caixaAtivo.movimentacoes && caixaAtivo.movimentacoes.length > 0 && (
+                    <div className="mt-6">
+                      <h4 className="text-sm font-medium text-muted-foreground mb-3">
+                        Movimentações Recentes
+                      </h4>
+                      <div className="space-y-2">
+                        {caixaAtivo.movimentacoes.slice(0, 5).map((mov: any) => (
+                          <div
+                            key={mov.id}
+                            className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                          >
+                            <div className="flex items-center gap-3">
+                              {mov.tipo === "ENTRADA" ? (
+                                <TrendingUp className="h-4 w-4 text-green-600" />
+                              ) : (
+                                <TrendingDown className="h-4 w-4 text-red-600" />
+                              )}
+                              <div>
+                                <p className="text-sm font-medium">{mov.descricao}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {mov.categoria} • {new Date(mov.dataHora).toLocaleDateString('pt-BR', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className={cn(
+                                "text-sm font-medium",
+                                mov.tipo === "ENTRADA" ? "text-green-600" : "text-red-600"
+                              )}>
+                                {mov.tipo === "ENTRADA" ? "+" : "-"}{formatBRL(mov.valor)}
+                              </span>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm">
+                                    <Settings className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => handleEditMovimentacao(mov)}>
+                                    <Edit className="h-4 w-4 mr-2" />
+                                    Editar
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => handleDeleteMovimentacao(mov.id)}
+                                    className="text-red-600"
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Excluir
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-8 space-y-4">
@@ -268,8 +365,11 @@ export default function FinanceiroPage() {
         </div>
       )}
 
+      {/* Relatórios */}
+      {activeTab === "relatorios" && <RelatoriosDashboard />}
+
       {/* Outras tabs - Placeholder */}
-      {activeTab !== "caixa" && (
+      {activeTab !== "caixa" && activeTab !== "relatorios" && (
         <Card className="shadow-sm">
           <CardContent className="p-12">
             <div className="text-center space-y-4">
@@ -279,7 +379,6 @@ export default function FinanceiroPage() {
                   {activeTab === "contas-pagar" && "Contas a Pagar"}
                   {activeTab === "contas-receber" && "Contas a Receber"}
                   {activeTab === "comissoes" && "Comissões"}
-                  {activeTab === "relatorios" && "Relatórios"}
                 </h3>
                 <p className="text-muted-foreground">
                   Esta funcionalidade será implementada em breve
@@ -289,6 +388,22 @@ export default function FinanceiroPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Modais */}
+      <CaixaModal
+        open={isCaixaModalOpen}
+        onOpenChange={setIsCaixaModalOpen}
+        caixa={caixaAtivo}
+        isEditing={!!caixaAtivo}
+      />
+
+      <MovimentacaoModal
+        open={isMovimentacaoModalOpen}
+        onOpenChange={setIsMovimentacaoModalOpen}
+        caixaId={caixaAtivo?.id || ""}
+        movimentacao={editingMovimentacao}
+        isEditing={!!editingMovimentacao}
+      />
     </div>
   );
 }

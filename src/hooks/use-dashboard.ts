@@ -59,6 +59,11 @@ export function useDashboard() {
     }
   );
 
+  // Debug: mostrar informações do SWR
+  console.log("useDashboard - SWR data:", data);
+  console.log("useDashboard - SWR error:", error);
+  console.log("useDashboard - SWR isLoading:", isLoading);
+
   return {
     dashboardData: data?.data,
     isLoading,
