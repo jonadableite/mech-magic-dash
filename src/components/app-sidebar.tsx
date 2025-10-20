@@ -1,7 +1,7 @@
 "use client";
 
 import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem, SidebarTrigger } from "@/components/ui/sidebar";
-import { LayoutDashboard, Users, Wrench, Package, Settings, Car } from "lucide-react";
+import { LayoutDashboard, Users, Wrench, Package, Settings, Car, Calendar, DollarSign } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -17,6 +17,16 @@ const menuItems = [
     icon: Users,
   },
   {
+    title: "Veículos",
+    url: "/veiculos",
+    icon: Car,
+  },
+  {
+    title: "Agendamentos",
+    url: "/agendamentos",
+    icon: Calendar,
+  },
+  {
     title: "Ordens de Serviço",
     url: "/ordens",
     icon: Wrench,
@@ -25,6 +35,11 @@ const menuItems = [
     title: "Estoque",
     url: "/estoque",
     icon: Package,
+  },
+  {
+    title: "Financeiro",
+    url: "/financeiro",
+    icon: DollarSign,
   },
   {
     title: "Configurações",

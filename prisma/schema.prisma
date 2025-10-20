@@ -22,6 +22,8 @@ model Cliente {
   // Relacionamentos
   veiculos  Veiculo[]
   ordens    OrdemServico[]
+  agendamentos Agendamento[]
+  contasReceber ContaReceber[]
 
   @@map("clientes")
 }
@@ -41,6 +43,7 @@ model Veiculo {
   clienteId String
   cliente   Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
   ordens    OrdemServico[]
+  agendamentos Agendamento[]
 
   @@map("veiculos")
 }
@@ -64,6 +67,8 @@ model OrdemServico {
   veiculoId String
   veiculo   Veiculo @relation(fields: [veiculoId], references: [id])
   itens     ItemOrdemServico[]
+  movimentacoes MovimentacaoCaixa[]
+  comissoes   Comissao[]
 
   @@map("ordens_servico")
 }
@@ -99,6 +104,33 @@ model Produto {
   @@map("produtos")
 }
 
+model Agendamento {
+  id          String   @id @default(cuid())
+  dataHora    DateTime
+  descricao   String
+  status      StatusAgendamento @default(AGENDADO)
+  observacoes String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  clienteId String
+  cliente   Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  veiculoId String
+  veiculo   Veiculo @relation(fields: [veiculoId], references: [id], onDelete: Cascade)
+
+  @@map("agendamentos")
+}
+
+enum StatusAgendamento {
+  AGENDADO
+  CONFIRMADO
+  EM_ANDAMENTO
+  FINALIZADO
+  CANCELADO
+  FALTOU
+}
+
 enum StatusOrdem {
   ABERTA
   EM_ANDAMENTO
@@ -112,4 +144,173 @@ enum Prioridade {
   MEDIA
   ALTA
   URGENTE
+}
+
+// ===== SISTEMA FINANCEIRO =====
+
+model Caixa {
+  id          String   @id @default(cuid())
+  dataAbertura DateTime @default(now())
+  dataFechamento DateTime?
+  valorInicial Decimal @default(0)
+  valorFinal   Decimal?
+  status      StatusCaixa @default(ABERTO)
+  observacoes String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  movimentacoes MovimentacaoCaixa[]
+  usuarioId    String
+  usuario      Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("caixas")
+}
+
+model MovimentacaoCaixa {
+  id          String   @id @default(cuid())
+  tipo        TipoMovimentacao
+  valor       Decimal
+  descricao   String
+  categoria   CategoriaMovimentacao
+  dataHora    DateTime @default(now())
+  observacoes String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  caixaId     String
+  caixa       Caixa @relation(fields: [caixaId], references: [id], onDelete: Cascade)
+  ordemId     String?
+  ordem       OrdemServico? @relation(fields: [ordemId], references: [id], onDelete: SetNull)
+  contaPagarId String?
+  contaPagar   ContaPagar? @relation(fields: [contaPagarId], references: [id], onDelete: SetNull)
+  contaReceberId String?
+  contaReceber ContaReceber? @relation(fields: [contaReceberId], references: [id], onDelete: SetNull)
+
+  @@map("movimentacoes_caixa")
+}
+
+model ContaPagar {
+  id          String   @id @default(cuid())
+  descricao   String
+  valor       Decimal
+  dataVencimento DateTime
+  dataPagamento DateTime?
+  status      StatusConta @default(PENDENTE)
+  categoria   CategoriaConta
+  fornecedor  String?
+  observacoes String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  movimentacoes MovimentacaoCaixa[]
+
+  @@map("contas_pagar")
+}
+
+model ContaReceber {
+  id          String   @id @default(cuid())
+  descricao   String
+  valor       Decimal
+  dataVencimento DateTime
+  dataRecebimento DateTime?
+  status      StatusConta @default(PENDENTE)
+  categoria   CategoriaConta
+  clienteId   String?
+  cliente     Cliente? @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+  observacoes String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  movimentacoes MovimentacaoCaixa[]
+
+  @@map("contas_receber")
+}
+
+model Comissao {
+  id          String   @id @default(cuid())
+  funcionario String
+  valor       Decimal
+  percentual  Decimal
+  dataCalculo DateTime @default(now())
+  dataPagamento DateTime?
+  status      StatusComissao @default(PENDENTE)
+  observacoes String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  ordemId     String
+  ordem       OrdemServico @relation(fields: [ordemId], references: [id], onDelete: Cascade)
+
+  @@map("comissoes")
+}
+
+model Usuario {
+  id        String   @id @default(cuid())
+  nome      String
+  email     String   @unique
+  senha     String
+  role      Role     @default(USUARIO)
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  caixas    Caixa[]
+
+  @@map("usuarios")
+}
+
+// Enums Financeiros
+enum StatusCaixa {
+  ABERTO
+  FECHADO
+}
+
+enum TipoMovimentacao {
+  ENTRADA
+  SAIDA
+}
+
+enum CategoriaMovimentacao {
+  VENDAS
+  SERVICOS
+  PAGAMENTOS
+  RECEBIMENTOS
+  DESPESAS
+  INVESTIMENTOS
+  OUTROS
+}
+
+enum StatusConta {
+  PENDENTE
+  PAGO
+  VENCIDO
+  CANCELADO
+}
+
+enum CategoriaConta {
+  FORNECEDORES
+  CLIENTES
+  FUNCIONARIOS
+  TAXAS
+  IMPOSTOS
+  MANUTENCAO
+  OUTROS
+}
+
+enum StatusComissao {
+  PENDENTE
+  PAGO
+  CANCELADO
+}
+
+enum Role {
+  ADMIN
+  GERENTE
+  USUARIO
 }

@@ -3,17 +3,20 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
-    const produtosEstoqueBaixo = await prisma.produto.findMany({
+    const produtos = await prisma.produto.findMany({
       where: {
         quantidade: {
           lte: prisma.produto.fields.quantidadeMinima,
         },
       },
-      orderBy: { quantidade: "asc" },
+      orderBy: [
+        { quantidade: "asc" },
+        { nome: "asc" },
+      ],
     });
 
     return NextResponse.json({
-      data: produtosEstoqueBaixo,
+      data: produtos,
       success: true,
     });
   } catch (error) {

@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Importar estilos do Floating Dock */
+@import "../styles/floating-dock.css";
+
 @layer base {
   :root {
     /* Tema Oficina Automotiva - Cores Industriais */

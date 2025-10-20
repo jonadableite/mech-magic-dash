@@ -4,6 +4,7 @@ import { ReactNode } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./app-sidebar";
 import { SimpleThemeToggle } from "./simple-theme-toggle";
+import { MobileFloatingDock, DesktopSidebar } from "./responsive-sidebar";
 import { Button } from "@/components/ui/button";
 import { PanelLeft, PanelRight } from "lucide-react";
 import { useSidebar } from "@/components/ui/sidebar";
@@ -61,15 +62,23 @@ export function Layout({ children }: LayoutProps) {
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
-        <AppSidebar />
+        {/* Sidebar Desktop */}
+        <div className="hidden md:block">
+          <AppSidebar />
+        </div>
+
+        {/* Conteúdo Principal */}
         <main className="flex-1 flex flex-col min-h-screen">
           <HeaderContent />
-          <div className="flex-1 p-4 sm:p-6 container-mobile mobile-safe-area">
+          <div className="flex-1 p-4 sm:p-6 container-mobile mobile-safe-area pb-20 md:pb-6">
             <div className="fade-in-up">
               {children}
             </div>
           </div>
         </main>
+
+        {/* Floating Dock Mobile */}
+        <MobileFloatingDock />
       </div>
     </SidebarProvider>
   );

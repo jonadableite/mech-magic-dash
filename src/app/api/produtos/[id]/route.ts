@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { updateClienteSchema } from "@/lib/schemas";
+import { updateProdutoSchema } from "@/lib/schemas";
 
 export async function GET(
   request: NextRequest,
@@ -9,32 +9,30 @@ export async function GET(
   try {
     const { id } = await params;
 
-    const cliente = await prisma.cliente.findUnique({
+    if (!id) {
+      return NextResponse.json(
+        { message: "ID do produto é obrigatório", success: false },
+        { status: 400 }
+      );
+    }
+
+    const produto = await prisma.produto.findUnique({
       where: { id },
-      include: {
-        veiculos: true,
-        ordens: {
-          include: {
-            veiculo: true,
-          },
-          orderBy: { createdAt: "desc" },
-        },
-      },
     });
 
-    if (!cliente) {
+    if (!produto) {
       return NextResponse.json(
-        { message: "Cliente não encontrado", success: false },
+        { message: "Produto não encontrado", success: false },
         { status: 404 }
       );
     }
 
     return NextResponse.json({
-      data: cliente,
+      data: produto,
       success: true,
     });
   } catch (error) {
-    console.error("Erro ao buscar cliente:", error);
+    console.error("Erro ao buscar produto:", error);
     return NextResponse.json(
       { message: "Erro interno do servidor", success: false },
       { status: 500 }
@@ -52,53 +50,53 @@ export async function PUT(
 
     if (!id) {
       return NextResponse.json(
-        { message: "ID do cliente é obrigatório", success: false },
+        { message: "ID do produto é obrigatório", success: false },
         { status: 400 }
       );
     }
 
     // Validar dados com Zod
-    const validatedData = updateClienteSchema.parse({ id, ...body });
+    const validatedData = updateProdutoSchema.parse({ id, ...body });
 
-    // Verificar se cliente existe
-    const existingCliente = await prisma.cliente.findUnique({
+    // Verificar se produto existe
+    const existingProduto = await prisma.produto.findUnique({
       where: { id },
     });
 
-    if (!existingCliente) {
+    if (!existingProduto) {
       return NextResponse.json(
-        { message: "Cliente não encontrado", success: false },
+        { message: "Produto não encontrado", success: false },
         { status: 404 }
       );
     }
 
-    // Se está atualizando o email, verificar se já existe
-    if (body.email && body.email !== existingCliente.email) {
-      const emailExists = await prisma.cliente.findUnique({
-        where: { email: body.email },
+    // Se está atualizando o código, verificar se já existe
+    if (body.codigo && body.codigo !== existingProduto.codigo) {
+      const codigoExists = await prisma.produto.findUnique({
+        where: { codigo: body.codigo },
       });
 
-      if (emailExists) {
+      if (codigoExists) {
         return NextResponse.json(
-          { message: "Email já cadastrado", success: false },
+          { message: "Código já cadastrado", success: false },
           { status: 400 }
         );
       }
     }
 
     const { id: _, ...updateData } = validatedData;
-    const cliente = await prisma.cliente.update({
+    const produto = await prisma.produto.update({
       where: { id },
       data: updateData,
     });
 
     return NextResponse.json({
-      data: cliente,
-      message: "Cliente atualizado com sucesso",
+      data: produto,
+      message: "Produto atualizado com sucesso",
       success: true,
     });
   } catch (error) {
-    console.error("Erro ao atualizar cliente:", error);
+    console.error("Erro ao atualizar produto:", error);
 
     if (error instanceof Error && error.name === "ZodError") {
       return NextResponse.json(
@@ -123,53 +121,33 @@ export async function DELETE(
 
     if (!id) {
       return NextResponse.json(
-        { message: "ID do cliente é obrigatório", success: false },
+        { message: "ID do produto é obrigatório", success: false },
         { status: 400 }
       );
     }
 
-    // Verificar se cliente existe
-    const existingCliente = await prisma.cliente.findUnique({
+    // Verificar se produto existe
+    const existingProduto = await prisma.produto.findUnique({
       where: { id },
-      include: {
-        ordens: {
-          where: {
-            status: {
-              in: ["ABERTA", "EM_ANDAMENTO", "AGUARDANDO_PECAS"],
-            },
-          },
-        },
-      },
     });
 
-    if (!existingCliente) {
+    if (!existingProduto) {
       return NextResponse.json(
-        { message: "Cliente não encontrado", success: false },
+        { message: "Produto não encontrado", success: false },
         { status: 404 }
       );
     }
 
-    // Verificar se há ordens em andamento
-    if (existingCliente.ordens.length > 0) {
-      return NextResponse.json(
-        {
-          message: "Não é possível excluir cliente com ordens em andamento",
-          success: false,
-        },
-        { status: 400 }
-      );
-    }
-
-    await prisma.cliente.delete({
+    await prisma.produto.delete({
       where: { id },
     });
 
     return NextResponse.json({
-      message: "Cliente excluído com sucesso",
+      message: "Produto excluído com sucesso",
       success: true,
     });
   } catch (error) {
-    console.error("Erro ao excluir cliente:", error);
+    console.error("Erro ao excluir produto:", error);
     return NextResponse.json(
       { message: "Erro interno do servidor", success: false },
       { status: 500 }

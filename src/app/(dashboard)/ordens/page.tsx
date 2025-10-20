@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Wrench, User, Car, Calendar, DollarSign } from "lucide-react";
+import { Plus, Search, Wrench, User, Car, Calendar, DollarSign, Mail, Phone } from "lucide-react";
 import { useOrdens } from "@/hooks/use-ordens";
 import { Skeleton } from "@/components/ui/skeleton";
 

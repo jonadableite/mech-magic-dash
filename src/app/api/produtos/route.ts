@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { createProdutoSchema } from "@/lib/schemas";
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,21 +9,30 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "10");
     const search = searchParams.get("search") || "";
     const categoria = searchParams.get("categoria") || "";
+    const estoqueBaixo = searchParams.get("estoqueBaixo") === "true";
 
     const skip = (page - 1) * limit;
 
     const where: any = {};
 
+    // Filtro de busca
     if (search) {
       where.OR = [
         { nome: { contains: search, mode: "insensitive" as const } },
         { codigo: { contains: search, mode: "insensitive" as const } },
         { categoria: { contains: search, mode: "insensitive" as const } },
+        { fornecedor: { contains: search, mode: "insensitive" as const } },
       ];
     }
 
+    // Filtro por categoria
     if (categoria) {
-      where.categoria = categoria;
+      where.categoria = { contains: categoria, mode: "insensitive" as const };
+    }
+
+    // Filtro de estoque baixo
+    if (estoqueBaixo) {
+      where.quantidade = { lte: prisma.produto.fields.quantidadeMinima };
     }
 
     const [produtos, total] = await Promise.all([
@@ -30,13 +40,22 @@ export async function GET(request: NextRequest) {
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: "desc" },
+        orderBy: [
+          { quantidade: "asc" }, // Produtos com estoque baixo primeiro
+          { nome: "asc" },
+        ],
       }),
       prisma.produto.count({ where }),
     ]);
 
+    // Converter preços para números para evitar problemas de precisão
+    const produtosFormatados = produtos.map((produto) => ({
+      ...produto,
+      preco: Number(produto.preco),
+    }));
+
     return NextResponse.json({
-      data: produtos,
+      data: produtosFormatados,
       pagination: {
         page,
         limit,
@@ -57,28 +76,13 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const {
-      nome,
-      descricao,
-      codigo,
-      preco,
-      quantidade = 0,
-      quantidadeMinima = 0,
-      categoria,
-      fornecedor,
-    } = body;
 
-    // Validar dados obrigatórios
-    if (!nome || !codigo || !preco) {
-      return NextResponse.json(
-        { message: "Nome, código e preço são obrigatórios", success: false },
-        { status: 400 }
-      );
-    }
+    // Validar dados com Zod
+    const validatedData = createProdutoSchema.parse(body);
 
     // Verificar se código já existe
     const existingProduto = await prisma.produto.findUnique({
-      where: { codigo },
+      where: { codigo: validatedData.codigo },
     });
 
     if (existingProduto) {
@@ -89,16 +93,7 @@ export async function POST(request: NextRequest) {
     }
 
     const produto = await prisma.produto.create({
-      data: {
-        nome,
-        descricao,
-        codigo,
-        preco,
-        quantidade,
-        quantidadeMinima,
-        categoria,
-        fornecedor,
-      },
+      data: validatedData,
     });
 
     return NextResponse.json(
@@ -111,6 +106,14 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("Erro ao criar produto:", error);
+
+    if (error instanceof Error && error.name === "ZodError") {
+      return NextResponse.json(
+        { message: "Dados inválidos", success: false },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
       { message: "Erro interno do servidor", success: false },
       { status: 500 }

@@ -1,6 +1,7 @@
 import useSWR from "swr";
 import useSWRMutation from "swr/mutation";
 import { apiClient, ApiResponse, PaginatedResponse } from "@/lib/api";
+import { CreateProdutoData, UpdateProdutoData } from "@/lib/schemas";
 
 // Interfaces para tipagem (Interface Segregation Principle)
 export interface Produto {
@@ -17,27 +18,34 @@ export interface Produto {
   updatedAt: string;
 }
 
-export interface CreateProdutoData {
-  nome: string;
-  descricao?: string;
-  codigo: string;
-  preco: number;
-  quantidade?: number;
-  quantidadeMinima?: number;
-  categoria?: string;
-  fornecedor?: string;
-}
-
-export interface UpdateProdutoData extends Partial<CreateProdutoData> {
-  id: string;
+export interface EstoqueStats {
+  totalProdutos: number;
+  totalValor: number;
+  produtosEstoqueBaixo: number;
+  produtosSemEstoque: number;
+  categorias: { categoria: string; quantidade: number }[];
 }
 
 // Classe para gerenciar operações de produtos (Single Responsibility Principle)
 class ProdutoService {
   private client = apiClient;
 
-  async getProdutos(): Promise<PaginatedResponse<Produto>> {
-    return this.client.get<Produto[]>("/produtos");
+  async getProdutos(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    categoria?: string;
+    estoqueBaixo?: boolean;
+  }): Promise<PaginatedResponse<Produto>> {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.set("page", params.page.toString());
+    if (params?.limit) searchParams.set("limit", params.limit.toString());
+    if (params?.search) searchParams.set("search", params.search);
+    if (params?.categoria) searchParams.set("categoria", params.categoria);
+    if (params?.estoqueBaixo) searchParams.set("estoqueBaixo", "true");
+
+    const query = searchParams.toString();
+    return this.client.get<Produto[]>(`/produtos${query ? `?${query}` : ""}`);
   }
 
   async getProduto(id: string): Promise<ApiResponse<Produto>> {
@@ -57,6 +65,17 @@ class ProdutoService {
     return this.client.delete<void>(`/produtos/${id}`);
   }
 
+  async ajustarEstoque(id: string, quantidade: number, tipo: "entrada" | "saida"): Promise<ApiResponse<Produto>> {
+    return this.client.post<Produto>(`/produtos/${id}/ajustar-estoque`, {
+      quantidade,
+      tipo,
+    });
+  }
+
+  async getEstoqueStats(): Promise<ApiResponse<EstoqueStats>> {
+    return this.client.get<EstoqueStats>("/produtos/estoque/stats");
+  }
+
   async getProdutosEstoqueBaixo(): Promise<ApiResponse<Produto[]>> {
     return this.client.get<Produto[]>("/produtos/estoque-baixo");
   }
@@ -66,10 +85,16 @@ class ProdutoService {
 const produtoService = new ProdutoService();
 
 // Hooks SWR para produtos
-export function useProdutos() {
+export function useProdutos(params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  categoria?: string;
+  estoqueBaixo?: boolean;
+}) {
   const { data, error, isLoading, mutate } = useSWR(
-    "/produtos",
-    () => produtoService.getProdutos(),
+    ["/produtos", params],
+    () => produtoService.getProdutos(params),
     {
       revalidateOnFocus: true,
       revalidateOnReconnect: true,
@@ -147,13 +172,46 @@ export function useDeleteProduto() {
   };
 }
 
+export function useAjustarEstoque() {
+  const { trigger, isMutating, error } = useSWRMutation(
+    "/produtos",
+    async (url, { arg }: { arg: { id: string; quantidade: number; tipo: "entrada" | "saida" } }) => {
+      return produtoService.ajustarEstoque(arg.id, arg.quantidade, arg.tipo);
+    }
+  );
+
+  return {
+    ajustarEstoque: trigger,
+    isAjustando: isMutating,
+    error,
+  };
+}
+
+export function useEstoqueStats() {
+  const { data, error, isLoading, mutate } = useSWR(
+    "/produtos/estoque/stats",
+    () => produtoService.getEstoqueStats(),
+    {
+      refreshInterval: 30000, // Atualizar a cada 30 segundos
+      revalidateOnFocus: true,
+    }
+  );
+
+  return {
+    stats: data?.data,
+    isLoading,
+    error,
+    mutate,
+  };
+}
+
 export function useProdutosEstoqueBaixo() {
   const { data, error, isLoading, mutate } = useSWR(
     "/produtos/estoque-baixo",
     () => produtoService.getProdutosEstoqueBaixo(),
     {
+      refreshInterval: 60000, // Atualizar a cada 1 minuto
       revalidateOnFocus: true,
-      revalidateOnReconnect: true,
     }
   );
 
