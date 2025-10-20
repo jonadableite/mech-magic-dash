@@ -15,7 +15,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { authApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
 interface UserDropdownProps {
@@ -37,13 +36,30 @@ export function UserDropdown({ user, className }: UserDropdownProps) {
   const handleSignOut = async () => {
     setIsLoading(true);
     try {
-      await authApi.signout();
-      toast({
-        title: "Logout realizado",
-        description: "Você foi desconectado com sucesso.",
+      console.log("Iniciando logout...");
+      const response = await fetch("/api/auth/session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ action: "signout" }),
       });
-      router.push("/signin");
+
+      console.log("Response status:", response.status);
+      const data = await response.json();
+      console.log("Response data:", data);
+
+      if (response.ok) {
+        toast({
+          title: "Logout realizado",
+          description: "Você foi desconectado com sucesso.",
+        });
+        router.push("/signin");
+      } else {
+        throw new Error(`Erro no logout: ${data.error || 'Status ' + response.status}`);
+      }
     } catch (error) {
+      console.error("Erro no logout:", error);
       toast({
         title: "Erro no logout",
         description: "Ocorreu um erro ao fazer logout. Tente novamente.",
