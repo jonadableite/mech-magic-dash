@@ -63,7 +63,7 @@ export interface UpdateOrdemData extends Partial<CreateOrdemData> {
 class OrdemService {
   private client = apiClient;
 
-  async getOrdens(): Promise<PaginatedResponse<OrdemServico>> {
+  async getOrdens(): Promise<ApiResponse<OrdemServico[]>> {
     return this.client.get<OrdemServico[]>("/ordens");
   }
 
@@ -105,7 +105,6 @@ export function useOrdens() {
 
   return {
     ordens: data?.data || [],
-    pagination: data?.pagination,
     isLoading,
     error,
     mutate,

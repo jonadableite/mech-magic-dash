@@ -1,12 +1,14 @@
 "use client";
 
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem, SidebarTrigger } from "@/components/ui/sidebar";
-import { LayoutDashboard, Users, Wrench, Package, Settings, Car, Calendar, DollarSign } from "lucide-react";
+import { LayoutDashboard, Users, Wrench, Package, Settings, Car, Calendar, DollarSign, CreditCard, User, GraduationCap } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserDropdown } from "@/components/user/user-dropdown";
 import { useAuth } from "@/hooks/use-auth";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TourButton } from "@/components/tour/tour-button";
+import { Button } from "./ui/button";
 
 const menuItems = [
   {
@@ -44,11 +46,6 @@ const menuItems = [
     url: "/financeiro",
     icon: DollarSign,
   },
-  {
-    title: "Configurações",
-    url: "/configuracoes",
-    icon: Settings,
-  },
 ];
 
 export function AppSidebar() {
@@ -56,7 +53,7 @@ export function AppSidebar() {
   const { user, isLoading } = useAuth();
 
   return (
-    <Sidebar className="border-r border-sidebar-border bg-sidebar-background backdrop-blur-md">
+    <Sidebar className="border-r border-sidebar-border bg-sidebar-background backdrop-blur-md" data-tour="sidebar">
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sidebar-primary to-sidebar-primary/80 text-sidebar-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
@@ -85,7 +82,11 @@ export function AppSidebar() {
                 tooltip={item.title}
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
-                <Link href={item.url as any} className="flex items-center gap-3 w-full">
+                <Link
+                  href={item.url as any}
+                  className="flex items-center gap-3 w-full"
+                  data-tour={item.url.replace('/', '')}
+                >
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-accent/50 transition-colors duration-200 group-hover:bg-sidebar-accent">
                     <item.icon className="h-4 w-4 transition-transform duration-200 group-hover:scale-110 text-sidebar-foreground" />
                   </div>
@@ -99,6 +100,11 @@ export function AppSidebar() {
 
       <SidebarFooter className="border-t border-sidebar-border p-3">
         <div className="space-y-3">
+          {/* Botão Tutorial Diferenciado */}
+          {/* <div className="px-2">
+            <TourButton variant="minimal" className="w-full justify-start gap-3 h-12 bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20 hover:from-primary/20 hover:to-primary/10 hover:border-primary/30 transition-all duration-300" />
+          </div> */}
+
           {/* User Dropdown */}
           {isLoading ? (
             <div className="flex items-center space-x-3 p-2">

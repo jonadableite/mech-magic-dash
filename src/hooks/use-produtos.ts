@@ -36,7 +36,7 @@ class ProdutoService {
     search?: string;
     categoria?: string;
     estoqueBaixo?: boolean;
-  }): Promise<PaginatedResponse<Produto>> {
+  }): Promise<ApiResponse<Produto[]>> {
     const searchParams = new URLSearchParams();
     if (params?.page) searchParams.set("page", params.page.toString());
     if (params?.limit) searchParams.set("limit", params.limit.toString());
@@ -65,7 +65,11 @@ class ProdutoService {
     return this.client.delete<void>(`/produtos/${id}`);
   }
 
-  async ajustarEstoque(id: string, quantidade: number, tipo: "entrada" | "saida"): Promise<ApiResponse<Produto>> {
+  async ajustarEstoque(
+    id: string,
+    quantidade: number,
+    tipo: "entrada" | "saida"
+  ): Promise<ApiResponse<Produto>> {
     return this.client.post<Produto>(`/produtos/${id}/ajustar-estoque`, {
       quantidade,
       tipo,
@@ -103,7 +107,6 @@ export function useProdutos(params?: {
 
   return {
     produtos: data?.data || [],
-    pagination: data?.pagination,
     isLoading,
     error,
     mutate,
@@ -175,7 +178,12 @@ export function useDeleteProduto() {
 export function useAjustarEstoque() {
   const { trigger, isMutating, error } = useSWRMutation(
     "/produtos",
-    async (url, { arg }: { arg: { id: string; quantidade: number; tipo: "entrada" | "saida" } }) => {
+    async (
+      url,
+      {
+        arg,
+      }: { arg: { id: string; quantidade: number; tipo: "entrada" | "saida" } }
+    ) => {
       return produtoService.ajustarEstoque(arg.id, arg.quantidade, arg.tipo);
     }
   );

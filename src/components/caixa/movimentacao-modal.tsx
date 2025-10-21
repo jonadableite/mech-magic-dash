@@ -66,7 +66,7 @@ export function MovimentacaoModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { createMovimentacao, isCreating } = useCreateMovimentacao();
-  const { updateMovimentacao, isUpdating } = useUpdateMovimentacao();
+  const { trigger: updateMovimentacao, isMutating: isUpdating } = useUpdateMovimentacao(caixaId, movimentacao?.id || "");
 
   const form = useForm<CreateMovimentacaoData | UpdateMovimentacaoData>({
     resolver: zodResolver(isEditing ? updateMovimentacaoSchema : createMovimentacaoSchema),
@@ -106,11 +106,7 @@ export function MovimentacaoModal({
       setIsSubmitting(true);
 
       if (isEditing && movimentacao) {
-        await updateMovimentacao({
-          caixaId,
-          movimentacaoId: movimentacao.id,
-          data: data as UpdateMovimentacaoData,
-        });
+        await updateMovimentacao(data as UpdateMovimentacaoData);
         ToastService.success("Movimentação atualizada com sucesso!");
       } else {
         await createMovimentacao({

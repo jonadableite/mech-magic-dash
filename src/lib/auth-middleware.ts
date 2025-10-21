@@ -36,10 +36,27 @@ export async function verifyUserAccess(
 
   // Para outros usuários, verificar se o recurso pertence a eles
   if (resourceId && resourceType) {
-    const resource = await prisma[resourceType as keyof typeof prisma].findUnique({
-      where: { id: resourceId },
-      select: { usuarioId: true },
-    });
+    // Prisma Client delegate methods (e.g. findUnique) are not available on types or root namespaces.
+    // Instead, use a switch/case or a mapping to access the correct delegate. Handle only allowed types.
+    let resource: { usuarioId: string } | null = null;
+
+    switch (resourceType) {
+      case "comissao":
+        resource = await prisma.comissao.findUnique({
+          where: { id: resourceId },
+          select: { usuarioId: true },
+        });
+        break;
+      case "outroRecurso":
+        // Substitua por outros recursos válidos, conforme necessidade
+        // resource = await prisma.outroRecurso.findUnique({ ... })
+        break;
+      default:
+        return NextResponse.json(
+          { error: "Tipo de recurso inválido ou não suportado" },
+          { status: 400 }
+        );
+    }
 
     if (!resource || resource.usuarioId !== userId) {
       return NextResponse.json(

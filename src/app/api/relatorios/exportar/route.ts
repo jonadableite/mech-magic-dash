@@ -1,13 +1,32 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { ApiErrorHandler } from "@/lib/error-handler";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { prisma } from "@/providers/prisma";
 import { format, startOfDay, endOfDay, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
+async function getUserIdFromSession(request: Request): Promise<string> {
+  const sessionToken = request.headers
+    .get("cookie")
+    ?.match(/session-token=([^;]+)/)?.[1];
+
+  if (!sessionToken) {
+    throw new Error("Token de sessão não encontrado");
+  }
+
+  const session = await prisma.sessao.findUnique({
+    where: { token: sessionToken },
+    include: { usuario: true },
+  });
+
+  if (!session || !session.usuario) {
+    throw new Error("Sessão inválida");
+  }
+
+  return session.usuario.id;
+}
+
 export async function GET(request: Request) {
   try {
+    const userId = await getUserIdFromSession(request);
     const { searchParams } = new URL(request.url);
     const dataInicio = searchParams.get("dataInicio");
     const dataFim = searchParams.get("dataFim");
@@ -85,7 +104,18 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
-    return ApiErrorHandler.handle(error);
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : String(error) || "Erro desconhecido";
+    console.error("Erro ao exportar relatório:", errorMessage);
+    return NextResponse.json(
+      {
+        success: false,
+        error: errorMessage,
+      },
+      { status: 500 }
+    );
   }
 }
 

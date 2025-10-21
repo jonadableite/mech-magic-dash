@@ -164,13 +164,13 @@ export function UserDropdown({ user, className }: UserDropdownProps) {
             <span>Configurações</span>
           </DropdownMenuItem>
 
-          <DropdownMenuItem
+          {/* <DropdownMenuItem
             className="cursor-pointer px-2 py-2 hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-            onClick={() => router.push("/billing")}
+            onClick={() => router.push("/assinaturas")}
           >
             <CreditCard className="mr-3 h-4 w-4" />
             <span>Assinatura</span>
-          </DropdownMenuItem>
+          </DropdownMenuItem> */}
         </DropdownMenuGroup>
 
         <DropdownMenuSeparator />

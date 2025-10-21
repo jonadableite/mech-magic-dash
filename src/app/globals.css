@@ -99,7 +99,7 @@
 @layer base {
   :root {
     /* Tema Oficina Automotiva - Cores Industriais */
-    --background: 0 0% 98%; /* Branco suave */
+    --background: 48 8% 88%; /* Branco gelo */
     --foreground: 0 0% 15%; /* Preto suave */
     --card: 0 0% 100%; /* Branco puro */
     --card-foreground: 0 0% 15%;

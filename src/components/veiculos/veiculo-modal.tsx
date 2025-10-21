@@ -86,7 +86,7 @@ export function VeiculoModal({ open, onOpenChange, veiculo }: VeiculoModalProps)
     setIsLoading(true);
     try {
       if (isEditing) {
-        await updateVeiculo({ id: veiculo.id, data: data as UpdateVeiculoData });
+        await updateVeiculo({ id: veiculo.id, ...data } as UpdateVeiculoData);
         ToastService.success(
           "Veículo atualizado com sucesso!",
           "As informações do veículo foram atualizadas."

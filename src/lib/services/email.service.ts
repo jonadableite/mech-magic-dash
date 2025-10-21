@@ -343,4 +343,8 @@ class EmailServiceImpl implements EmailService {
 export const emailService = new EmailServiceImpl();
 
 // Export types for external use
-export type { EmailTemplate, EmailTemplates, SendEmailParams };
+export type {
+  EmailTemplate as EmailTemplateType,
+  EmailTemplates as EmailTemplatesType,
+  SendEmailParams as SendEmailParamsType,
+};

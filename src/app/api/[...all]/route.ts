@@ -1,4 +1,15 @@
-import { auth } from "@/providers/auth-minimal";
-import { toNextJsHandler } from "better-auth/next-js";
+import { NextRequest, NextResponse } from "next/server";
 
-export const { POST, GET } = toNextJsHandler(auth);
+export async function GET(request: NextRequest) {
+  return NextResponse.json(
+    { message: "API route not implemented" },
+    { status: 501 }
+  );
+}
+
+export async function POST(request: NextRequest) {
+  return NextResponse.json(
+    { message: "API route not implemented" },
+    { status: 501 }
+  );
+}

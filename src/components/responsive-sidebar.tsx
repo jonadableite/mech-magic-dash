@@ -205,7 +205,7 @@ export function MobileFloatingDock() {
               const isActive = pathname === action.href;
 
               return (
-                <Link key={action.href} href={action.href}>
+                <Link key={action.href} href={action.href as any}>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -255,7 +255,7 @@ export function DesktopSidebar() {
 
             return (
               <NavigationMenuItem key={item.href} className="w-full">
-                <Link href={item.href} legacyBehavior passHref>
+                <Link href={item.href as any} legacyBehavior passHref>
                   <NavigationMenuLink
                     className={cn(
                       "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 w-full",

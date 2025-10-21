@@ -111,7 +111,9 @@ export async function seedCaixaData(): Promise<ServiceResult<SeedResult>> {
   }
 }
 
-export async function seedClientesData(): Promise<ServiceResult<any[]>> {
+export async function seedClientesData(
+  usuarioId: string
+): Promise<ServiceResult<any[]>> {
   try {
     const clientesData = [
       {
@@ -126,6 +128,7 @@ export async function seedClientesData(): Promise<ServiceResult<any[]>> {
         rg: "12.345.678-9",
         dataNascimento: new Date("1985-05-15"),
         observacoes: "Cliente preferencial",
+        usuarioId,
       },
       {
         nome: "Maria Santos",
@@ -139,6 +142,7 @@ export async function seedClientesData(): Promise<ServiceResult<any[]>> {
         rg: "98.765.432-1",
         dataNascimento: new Date("1990-08-22"),
         observacoes: "Cliente novo",
+        usuarioId,
       },
       {
         nome: "Pedro Oliveira",
@@ -152,13 +156,19 @@ export async function seedClientesData(): Promise<ServiceResult<any[]>> {
         rg: "45.678.912-3",
         dataNascimento: new Date("1988-12-10"),
         observacoes: "Cliente corporativo",
+        usuarioId,
       },
     ];
 
     const clientes = [];
     for (const clienteData of clientesData) {
       const cliente = await prisma.cliente.upsert({
-        where: { email: clienteData.email },
+        where: {
+          email_usuarioId: {
+            email: clienteData.email,
+            usuarioId: clienteData.usuarioId,
+          },
+        },
         update: {},
         create: clienteData,
       });
@@ -180,7 +190,9 @@ export async function seedClientesData(): Promise<ServiceResult<any[]>> {
   }
 }
 
-export async function seedProdutosData(): Promise<ServiceResult<any[]>> {
+export async function seedProdutosData(
+  usuarioId: string
+): Promise<ServiceResult<any[]>> {
   try {
     const produtosData = [
       {
@@ -195,6 +207,7 @@ export async function seedProdutosData(): Promise<ServiceResult<any[]>> {
         modelo: "W712/75",
         unidade: "UN",
         observacoes: "Compatível com vários modelos",
+        usuarioId,
       },
       {
         codigo: "P002",
@@ -208,6 +221,7 @@ export async function seedProdutosData(): Promise<ServiceResult<any[]>> {
         modelo: "P85020",
         unidade: "PAR",
         observacoes: "Para veículos compactos",
+        usuarioId,
       },
       {
         codigo: "P003",
@@ -221,13 +235,19 @@ export async function seedProdutosData(): Promise<ServiceResult<any[]>> {
         modelo: "M60B",
         unidade: "UN",
         observacoes: "12V, 60Ah, 600A",
+        usuarioId,
       },
     ];
 
     const produtos = [];
     for (const produtoData of produtosData) {
       const produto = await prisma.produto.upsert({
-        where: { codigo: produtoData.codigo },
+        where: {
+          codigo_usuarioId: {
+            codigo: produtoData.codigo,
+            usuarioId: produtoData.usuarioId,
+          },
+        },
         update: {},
         create: produtoData,
       });
@@ -259,26 +279,35 @@ export async function seedAllData(): Promise<
   try {
     const caixaResult = await seedCaixaData();
     if (!caixaResult.success) {
-      return caixaResult;
+      return {
+        success: false,
+        error: caixaResult.error,
+      };
     }
 
-    const clientesResult = await seedClientesData();
+    const clientesResult = await seedClientesData(caixaResult.data!.usuario.id);
     if (!clientesResult.success) {
-      return clientesResult;
+      return {
+        success: false,
+        error: clientesResult.error,
+      };
     }
 
-    const produtosResult = await seedProdutosData();
+    const produtosResult = await seedProdutosData(caixaResult.data!.usuario.id);
     if (!produtosResult.success) {
-      return produtosResult;
+      return {
+        success: false,
+        error: produtosResult.error,
+      };
     }
 
     console.log("✅ Todos os dados de teste foram criados com sucesso!");
     return {
       success: true,
       data: {
-        caixa: caixaResult.data,
-        clientes: clientesResult.data,
-        produtos: produtosResult.data,
+        caixa: caixaResult.data!,
+        clientes: clientesResult.data!,
+        produtos: produtosResult.data!,
       },
     };
   } catch (error) {

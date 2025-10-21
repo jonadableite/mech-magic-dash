@@ -77,6 +77,13 @@ export async function PUT(
     // Verificar se veículo existe
     const existingVeiculo = await prisma.veiculo.findUnique({
       where: { id },
+      include: {
+        cliente: {
+          select: {
+            usuarioId: true,
+          },
+        },
+      },
     });
 
     if (!existingVeiculo) {
@@ -88,8 +95,11 @@ export async function PUT(
 
     // Se está atualizando a placa, verificar se já existe
     if (body.placa && body.placa !== existingVeiculo.placa) {
-      const placaExists = await prisma.veiculo.findUnique({
-        where: { placa: body.placa },
+      const placaExists = await prisma.veiculo.findFirst({
+        where: {
+          placa: body.placa,
+          cliente: { usuarioId: existingVeiculo.cliente.usuarioId },
+        },
       });
 
       if (placaExists) {

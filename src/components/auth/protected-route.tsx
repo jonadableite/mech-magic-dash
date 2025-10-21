@@ -24,7 +24,7 @@ export function ProtectedRoute({
 
   useEffect(() => {
     if (isInitialized && requireAuth && !isAuthenticated) {
-      router.push(redirectTo);
+      router.push(redirectTo as any);
     }
   }, [isAuthenticated, isInitialized, requireAuth, redirectTo, router]);
 

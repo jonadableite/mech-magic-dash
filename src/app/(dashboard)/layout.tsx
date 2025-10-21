@@ -1,6 +1,8 @@
-import { Layout } from "@/components/layout";
+import { Layout } from "@/components/Layout";
 import { AuthProvider } from "@/contexts/auth-context";
 import { ProtectedRoute } from "@/components/auth/protected-route";
+import { TourProvider } from "@/contexts/tour-context";
+import { TourGuide } from "@/components/tour/tour-guide";
 
 export default function DashboardLayout({
   children,
@@ -10,7 +12,12 @@ export default function DashboardLayout({
   return (
     <AuthProvider>
       <ProtectedRoute>
-        <Layout>{children}</Layout>
+        <TourProvider>
+          <Layout>
+            {children}
+            <TourGuide />
+          </Layout>
+        </TourProvider>
       </ProtectedRoute>
     </AuthProvider>
   );

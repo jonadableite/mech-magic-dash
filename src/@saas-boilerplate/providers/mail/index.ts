@@ -1,6 +1,0 @@
-export * from './adapters/resend.adapter'
-export * from './adapters/smtp.adapter'
-export * from './interfaces/adapter.interface'
-export * from './interfaces/provider.interface'
-export * from './mail.provider'
-export * from './utils/get-adapter'

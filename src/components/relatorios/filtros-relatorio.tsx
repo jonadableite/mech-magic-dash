@@ -16,7 +16,7 @@ import { Calendar, Download, RefreshCw } from "lucide-react";
 import { format, subDays, subMonths, subWeeks } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-interface FiltrosRelatorioProps {
+export interface FiltrosRelatorioProps {
   onFiltrosChange: (filtros: FiltrosRelatorio) => void;
   onExportar: () => void;
   isLoading?: boolean;

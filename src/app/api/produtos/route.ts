@@ -1,6 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/providers/prisma";
 import { createProdutoSchema } from "@/lib/schemas";
+
+// Helper para obter userId da sessão
+async function getUserIdFromSession(
+  request: NextRequest
+): Promise<string | null> {
+  const sessionToken = request.cookies.get("session-token")?.value;
+  if (!sessionToken) return null;
+
+  try {
+    const session = await prisma.sessao.findUnique({
+      where: { token: sessionToken },
+      include: { usuario: true },
+    });
+
+    if (!session || session.expiresAt < new Date()) {
+      return null;
+    }
+
+    return session.userId;
+  } catch (error) {
+    console.error("Erro ao buscar sessão:", error);
+    return null;
+  }
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -75,14 +99,26 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const userId = await getUserIdFromSession(request);
+
+    if (!userId) {
+      return NextResponse.json(
+        { message: "Não autorizado", success: false },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
 
     // Validar dados com Zod
     const validatedData = createProdutoSchema.parse(body);
 
-    // Verificar se código já existe
-    const existingProduto = await prisma.produto.findUnique({
-      where: { codigo: validatedData.codigo },
+    // Verificar se código já existe para o usuário
+    const existingProduto = await prisma.produto.findFirst({
+      where: {
+        codigo: validatedData.codigo,
+        usuarioId: userId,
+      },
     });
 
     if (existingProduto) {
@@ -93,7 +129,10 @@ export async function POST(request: NextRequest) {
     }
 
     const produto = await prisma.produto.create({
-      data: validatedData,
+      data: {
+        ...validatedData,
+        usuarioId: userId,
+      },
     });
 
     return NextResponse.json(

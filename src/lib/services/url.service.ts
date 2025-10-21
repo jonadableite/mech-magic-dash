@@ -107,4 +107,4 @@ class UrlServiceImpl implements UrlService {
 export const urlService = new UrlServiceImpl();
 
 // Export types for external use
-export type { UrlService };
+export type { UrlService as UrlServiceType };

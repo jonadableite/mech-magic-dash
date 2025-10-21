@@ -72,8 +72,11 @@ export async function PUT(
 
     // Se está atualizando o código, verificar se já existe
     if (body.codigo && body.codigo !== existingProduto.codigo) {
-      const codigoExists = await prisma.produto.findUnique({
-        where: { codigo: body.codigo },
+      const codigoExists = await prisma.produto.findFirst({
+        where: {
+          codigo: body.codigo,
+          usuarioId: existingProduto.usuarioId,
+        },
       });
 
       if (codigoExists) {

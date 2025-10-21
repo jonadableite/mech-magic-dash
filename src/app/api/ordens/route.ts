@@ -1,8 +1,72 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/providers/prisma";
+import { z } from "zod";
+
+// Schema de validação para criação de ordem (Single Responsibility Principle)
+const createOrdemSchema = z.object({
+  descricao: z.string().min(1, "Descrição é obrigatória"),
+  status: z
+    .enum([
+      "ABERTA",
+      "EM_ANDAMENTO",
+      "AGUARDANDO_PECAS",
+      "FINALIZADA",
+      "CANCELADA",
+    ])
+    .default("ABERTA"),
+  prioridade: z.enum(["BAIXA", "MEDIA", "ALTA", "URGENTE"]).default("MEDIA"),
+  observacoes: z.string().optional(),
+  clienteId: z.string().uuid("ID do cliente inválido"),
+  veiculoId: z.string().uuid("ID do veículo inválido"),
+  itens: z
+    .array(
+      z.object({
+        descricao: z.string().min(1, "Descrição do item é obrigatória"),
+        quantidade: z.number().min(1, "Quantidade deve ser maior que 0"),
+        valorUnitario: z
+          .number()
+          .min(0, "Valor unitário deve ser maior ou igual a 0"),
+        observacoes: z.string().optional(),
+      })
+    )
+    .default([]),
+});
+
+// Helper para obter userId da sessão (Dependency Inversion Principle)
+async function getUserIdFromSession(
+  request: NextRequest
+): Promise<string | null> {
+  const sessionToken = request.cookies.get("session-token")?.value;
+  if (!sessionToken) return null;
+
+  try {
+    const session = await prisma.sessao.findUnique({
+      where: { token: sessionToken },
+      include: { usuario: true },
+    });
+
+    if (!session || session.expiresAt < new Date()) {
+      return null;
+    }
+
+    return session.userId;
+  } catch (error) {
+    console.error("Erro ao buscar sessão:", error);
+    return null;
+  }
+}
 
 export async function GET(request: NextRequest) {
   try {
+    const userId = await getUserIdFromSession(request);
+
+    if (!userId) {
+      return NextResponse.json(
+        { message: "Não autorizado", success: false },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
@@ -11,17 +75,23 @@ export async function GET(request: NextRequest) {
 
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: any = {
+      cliente: { usuarioId: userId },
+    };
 
     if (search) {
       where.OR = [
         { numero: { contains: search, mode: "insensitive" as const } },
         {
-          cliente: { nome: { contains: search, mode: "insensitive" as const } },
+          cliente: {
+            nome: { contains: search, mode: "insensitive" as const },
+            usuarioId: userId,
+          },
         },
         {
           veiculo: {
             placa: { contains: search, mode: "insensitive" as const },
+            cliente: { usuarioId: userId },
           },
         },
       ];
@@ -82,32 +152,32 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const {
-      descricao,
-      status = "ABERTA",
-      prioridade = "MEDIA",
-      observacoes,
-      clienteId,
-      veiculoId,
-      itens = [],
-    } = body;
+    const userId = await getUserIdFromSession(request);
 
-    // Validar dados obrigatórios
-    if (!descricao || !clienteId || !veiculoId) {
+    if (!userId) {
       return NextResponse.json(
-        {
-          message: "Descrição, cliente e veículo são obrigatórios",
-          success: false,
-        },
-        { status: 400 }
+        { message: "Não autorizado", success: false },
+        { status: 401 }
       );
     }
 
-    // Verificar se cliente e veículo existem
+    const body = await request.json();
+    const validatedData = createOrdemSchema.parse(body);
+
+    // Verificar se cliente e veículo existem e pertencem ao usuário
     const [cliente, veiculo] = await Promise.all([
-      prisma.cliente.findUnique({ where: { id: clienteId } }),
-      prisma.veiculo.findUnique({ where: { id: veiculoId } }),
+      prisma.cliente.findFirst({
+        where: {
+          id: validatedData.clienteId,
+          usuarioId: userId,
+        },
+      }),
+      prisma.veiculo.findFirst({
+        where: {
+          id: validatedData.veiculoId,
+          cliente: { usuarioId: userId },
+        },
+      }),
     ]);
 
     if (!cliente) {
@@ -136,22 +206,23 @@ export async function POST(request: NextRequest) {
     const numero = `#OS-${proximoNumero.toString().padStart(4, "0")}`;
 
     // Calcular valor total dos itens
-    const valorTotal = itens.reduce((total: number, item: any) => {
+    const valorTotal = validatedData.itens.reduce((total, item) => {
       return total + item.quantidade * item.valorUnitario;
     }, 0);
 
     const ordem = await prisma.ordemServico.create({
       data: {
         numero,
-        descricao,
-        status,
-        prioridade,
-        observacoes,
+        descricao: validatedData.descricao,
+        status: validatedData.status,
+        prioridade: validatedData.prioridade,
+        observacoes: validatedData.observacoes,
         valorTotal,
-        clienteId,
-        veiculoId,
+        clienteId: validatedData.clienteId,
+        veiculoId: validatedData.veiculoId,
+        usuarioId: userId,
         itens: {
-          create: itens.map((item: any) => ({
+          create: validatedData.itens.map((item) => ({
             descricao: item.descricao,
             quantidade: item.quantidade,
             valorUnitario: item.valorUnitario,
@@ -191,6 +262,17 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          message: "Dados inválidos",
+          errors: error.errors,
+          success: false,
+        },
+        { status: 400 }
+      );
+    }
+
     console.error("Erro ao criar ordem:", error);
     return NextResponse.json(
       { message: "Erro interno do servidor", success: false },

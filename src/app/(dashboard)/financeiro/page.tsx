@@ -72,7 +72,20 @@ export default function FinanceiroPage() {
   const handleDeleteMovimentacao = async (movimentacaoId: string) => {
     if (confirm("Tem certeza que deseja excluir esta movimentação?")) {
       try {
-        await deleteMovimentacao({ movimentacaoId });
+        if (!caixaAtivo?.id) {
+          ToastService.error("Caixa não encontrado");
+          return;
+        }
+        
+        // Usar fetch direto para deletar movimentação
+        const response = await fetch(`/api/caixa/${caixaAtivo.id}/movimentacoes/${movimentacaoId}`, {
+          method: "DELETE",
+        });
+        
+        if (!response.ok) {
+          throw new Error("Erro ao excluir movimentação");
+        }
+        
         ToastService.success("Movimentação excluída com sucesso!");
         mutateStats();
         mutateCaixaAtivo();
@@ -97,7 +110,7 @@ export default function FinanceiroPage() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in" data-tour="financeiro">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="space-y-1">
@@ -179,7 +192,7 @@ export default function FinanceiroPage() {
                         </span>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        Responsável: {caixaAtivo.usuario.nome}
+                        Caixa ativo
                       </p>
                     </div>
                     <div className="text-right">

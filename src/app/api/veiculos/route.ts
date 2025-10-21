@@ -1,6 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/providers/prisma";
 import { createVeiculoSchema } from "@/lib/schemas";
+
+// Helper para obter userId da sessão
+async function getUserIdFromSession(
+  request: NextRequest
+): Promise<string | null> {
+  const sessionToken = request.cookies.get("session-token")?.value;
+  if (!sessionToken) return null;
+
+  try {
+    const session = await prisma.sessao.findUnique({
+      where: { token: sessionToken },
+      include: { usuario: true },
+    });
+
+    if (!session || session.expiresAt < new Date()) {
+      return null;
+    }
+
+    return session.userId;
+  } catch (error) {
+    console.error("Erro ao buscar sessão:", error);
+    return null;
+  }
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -84,14 +108,26 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const userId = await getUserIdFromSession(request);
+
+    if (!userId) {
+      return NextResponse.json(
+        { message: "Não autorizado", success: false },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
 
     // Validar dados com Zod
     const validatedData = createVeiculoSchema.parse(body);
 
-    // Verificar se placa já existe
-    const existingVeiculo = await prisma.veiculo.findUnique({
-      where: { placa: validatedData.placa },
+    // Verificar se placa já existe para o usuário
+    const existingVeiculo = await prisma.veiculo.findFirst({
+      where: {
+        placa: validatedData.placa,
+        cliente: { usuarioId: userId },
+      },
     });
 
     if (existingVeiculo) {
@@ -101,9 +137,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verificar se cliente existe
-    const cliente = await prisma.cliente.findUnique({
-      where: { id: validatedData.clienteId },
+    // Verificar se cliente existe e pertence ao usuário
+    const cliente = await prisma.cliente.findFirst({
+      where: {
+        id: validatedData.clienteId,
+        usuarioId: userId,
+      },
     });
 
     if (!cliente) {
@@ -114,7 +153,10 @@ export async function POST(request: NextRequest) {
     }
 
     const veiculo = await prisma.veiculo.create({
-      data: validatedData,
+      data: {
+        ...validatedData,
+        usuarioId: userId,
+      },
       include: {
         cliente: {
           select: {

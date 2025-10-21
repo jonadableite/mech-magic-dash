@@ -3,7 +3,13 @@
  * Type-safe authentication interfaces following SOLID principles
  */
 
-import type { Prettify } from "./common";
+import type {
+  PaginationParams,
+  PaginationResult,
+  Prettify,
+  RepositoryResult,
+  ServiceResult,
+} from "./common";
 
 export interface User {
   id: string;

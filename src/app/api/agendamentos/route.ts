@@ -1,6 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/providers/prisma";
 import { createAgendamentoSchema } from "@/lib/schemas";
+
+async function getUserIdFromSession(request: NextRequest): Promise<string> {
+  const sessionToken = request.cookies.get("session-token")?.value;
+
+  if (!sessionToken) {
+    throw new Error("Token de sessão não encontrado");
+  }
+
+  const session = await prisma.sessao.findUnique({
+    where: { token: sessionToken },
+    include: { usuario: true },
+  });
+
+  if (!session || !session.usuario) {
+    throw new Error("Sessão inválida");
+  }
+
+  return session.usuario.id;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -102,6 +121,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const userId = await getUserIdFromSession(request);
     const body = await request.json();
     const validatedData = createAgendamentoSchema.parse(body);
 
@@ -158,6 +178,7 @@ export async function POST(request: NextRequest) {
       data: {
         ...validatedData,
         dataHora: new Date(validatedData.dataHora),
+        usuarioId: userId,
       },
       include: {
         cliente: {

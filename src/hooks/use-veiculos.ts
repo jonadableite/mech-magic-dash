@@ -62,30 +62,52 @@ class VeiculoService {
     if (params?.clienteId) searchParams.set("clienteId", params.clienteId);
 
     const query = searchParams.toString();
-    return this.client.get<Veiculo[]>(`/veiculos${query ? `?${query}` : ""}`);
+    // Ajuste: trata a resposta da API que vem como ApiResponse<PaginatedResponse<Veiculo>>
+    const response = await this.client.get<
+      ApiResponse<PaginatedResponse<Veiculo>>
+    >(`/veiculos${query ? `?${query}` : ""}`);
+    // Garante compatibilidade com a tipagem esperada
+    return response.data as unknown as PaginatedResponse<Veiculo>;
   }
 
   async getVeiculo(id: string): Promise<ApiResponse<Veiculo>> {
-    return this.client.get<Veiculo>(`/veiculos/${id}`);
+    const response = await this.client.get<ApiResponse<Veiculo>>(
+      `/veiculos/${id}`
+    );
+    return response.data as unknown as ApiResponse<Veiculo>;
   }
 
   async createVeiculo(data: CreateVeiculoData): Promise<ApiResponse<Veiculo>> {
-    return this.client.post<Veiculo>("/veiculos", data);
+    const response = await this.client.post<ApiResponse<Veiculo>>(
+      "/veiculos",
+      data
+    );
+    return response.data as unknown as ApiResponse<Veiculo>;
   }
 
   async updateVeiculo(data: UpdateVeiculoData): Promise<ApiResponse<Veiculo>> {
     const { id, ...updateData } = data;
-    return this.client.put<Veiculo>(`/veiculos/${id}`, updateData);
+    const response = await this.client.put<ApiResponse<Veiculo>>(
+      `/veiculos/${id}`,
+      updateData
+    );
+    return response.data as unknown as ApiResponse<Veiculo>;
   }
 
   async deleteVeiculo(id: string): Promise<ApiResponse<void>> {
-    return this.client.delete<void>(`/veiculos/${id}`);
+    const response = await this.client.delete<ApiResponse<void>>(
+      `/veiculos/${id}`
+    );
+    return response.data as unknown as ApiResponse<void>;
   }
 
   async getVeiculosByCliente(
     clienteId: string
   ): Promise<ApiResponse<Veiculo[]>> {
-    return this.client.get<Veiculo[]>(`/veiculos/cliente/${clienteId}`);
+    const response = await this.client.get<ApiResponse<Veiculo[]>>(
+      `/veiculos/cliente/${clienteId}`
+    );
+    return response.data as unknown as ApiResponse<Veiculo[]>;
   }
 }
 

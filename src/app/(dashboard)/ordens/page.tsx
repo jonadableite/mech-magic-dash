@@ -4,19 +4,102 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Wrench, User, Car, Calendar, DollarSign, Mail, Phone } from "lucide-react";
-import { useOrdens } from "@/hooks/use-ordens";
+import { Plus, Search, Wrench, User, Car, Calendar, DollarSign, Mail, Phone, Eye, Edit, Trash2, CheckCircle, XCircle } from "lucide-react";
+import { useOrdens, useDeleteOrdem, useFinalizarOrdem, OrdemServico } from "@/hooks/use-ordens";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+import { NovaOrdemModal } from "@/components/ordens/nova-ordem-modal";
+import { EditarOrdemModal } from "@/components/ordens/editar-ordem-modal";
+import { DetalhesOrdemModal } from "@/components/ordens/detalhes-ordem-modal";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function OrdensPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const { ordens, isLoading, error } = useOrdens();
+  const [novaOrdemOpen, setNovaOrdemOpen] = useState(false);
+  const [editarOrdemOpen, setEditarOrdemOpen] = useState(false);
+  const [detalhesOrdemOpen, setDetalhesOrdemOpen] = useState(false);
+  const [ordemSelecionada, setOrdemSelecionada] = useState<OrdemServico | null>(null);
+  const [ordemParaDeletar, setOrdemParaDeletar] = useState<OrdemServico | null>(null);
+  const [ordemParaFinalizar, setOrdemParaFinalizar] = useState<OrdemServico | null>(null);
+
+  const { ordens, isLoading, error, mutate } = useOrdens();
+  const { deleteOrdem, isDeleting } = useDeleteOrdem();
+  const { finalizarOrdem, isFinalizando } = useFinalizarOrdem();
+  const { toast } = useToast();
 
   const filteredOrdens = ordens.filter((ordem) =>
     ordem.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
     ordem.cliente.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
     ordem.veiculo.placa.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Funções de ação (Single Responsibility Principle)
+  const handleVerDetalhes = (ordem: OrdemServico) => {
+    setOrdemSelecionada(ordem);
+    setDetalhesOrdemOpen(true);
+  };
+
+  const handleEditar = (ordem: OrdemServico) => {
+    setOrdemSelecionada(ordem);
+    setEditarOrdemOpen(true);
+  };
+
+  const handleDeletar = (ordem: OrdemServico) => {
+    setOrdemParaDeletar(ordem);
+  };
+
+  const handleFinalizar = (ordem: OrdemServico) => {
+    setOrdemParaFinalizar(ordem);
+  };
+
+  const confirmarDeletar = async () => {
+    if (!ordemParaDeletar) return;
+
+    try {
+      await deleteOrdem(ordemParaDeletar.id);
+      toast({
+        title: "Sucesso",
+        description: "Ordem deletada com sucesso!",
+      });
+      mutate(); // Atualizar lista
+      setOrdemParaDeletar(null);
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao deletar ordem. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const confirmarFinalizar = async () => {
+    if (!ordemParaFinalizar) return;
+
+    try {
+      await finalizarOrdem(ordemParaFinalizar.id);
+      toast({
+        title: "Sucesso",
+        description: "Ordem finalizada com sucesso!",
+      });
+      mutate(); // Atualizar lista
+      setOrdemParaFinalizar(null);
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao finalizar ordem. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -66,13 +149,16 @@ export default function OrdensPage() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in" data-tour="ordens">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold text-foreground">Ordens de Serviço</h2>
           <p className="text-muted-foreground">Gerencie as ordens de serviço</p>
         </div>
-        <Button className="gap-2 w-full sm:w-auto">
+        <Button
+          className="gap-2 w-full sm:w-auto"
+          onClick={() => setNovaOrdemOpen(true)}
+        >
           <Plus className="h-4 w-4" />
           Nova Ordem
         </Button>
@@ -169,15 +255,44 @@ export default function OrdensPage() {
 
                     {/* Ações */}
                     <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t">
-                      <Button variant="outline" size="sm" className="flex-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 gap-2"
+                        onClick={() => handleVerDetalhes(ordem)}
+                      >
+                        <Eye className="h-4 w-4" />
                         Ver Detalhes
                       </Button>
-                      <Button variant="outline" size="sm" className="flex-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 gap-2"
+                        onClick={() => handleEditar(ordem)}
+                      >
+                        <Edit className="h-4 w-4" />
                         Editar
                       </Button>
                       {ordem.status !== 'FINALIZADA' && ordem.status !== 'CANCELADA' && (
-                        <Button variant="outline" size="sm" className="flex-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 gap-2 text-success hover:text-success"
+                          onClick={() => handleFinalizar(ordem)}
+                        >
+                          <CheckCircle className="h-4 w-4" />
                           Finalizar
+                        </Button>
+                      )}
+                      {ordem.status !== 'FINALIZADA' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 gap-2 text-destructive hover:text-destructive"
+                          onClick={() => handleDeletar(ordem)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Deletar
                         </Button>
                       )}
                     </div>
@@ -188,6 +303,70 @@ export default function OrdensPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Modais */}
+      <NovaOrdemModal
+        isOpen={novaOrdemOpen}
+        onClose={() => setNovaOrdemOpen(false)}
+      />
+
+      <EditarOrdemModal
+        isOpen={editarOrdemOpen}
+        onClose={() => setEditarOrdemOpen(false)}
+        ordem={ordemSelecionada}
+      />
+
+      <DetalhesOrdemModal
+        isOpen={detalhesOrdemOpen}
+        onClose={() => setDetalhesOrdemOpen(false)}
+        ordem={ordemSelecionada}
+      />
+
+      {/* Diálogo de confirmação para deletar */}
+      <AlertDialog open={!!ordemParaDeletar} onOpenChange={() => setOrdemParaDeletar(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja deletar a ordem <strong>{ordemParaDeletar?.numero}</strong>?
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmarDeletar}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deletando..." : "Deletar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Diálogo de confirmação para finalizar */}
+      <AlertDialog open={!!ordemParaFinalizar} onOpenChange={() => setOrdemParaFinalizar(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Finalizar Ordem</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja finalizar a ordem <strong>{ordemParaFinalizar?.numero}</strong>?
+              Após finalizada, a ordem não poderá ser editada.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmarFinalizar}
+              disabled={isFinalizando}
+              className="bg-success text-success-foreground hover:bg-success/90"
+            >
+              {isFinalizando ? "Finalizando..." : "Finalizar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

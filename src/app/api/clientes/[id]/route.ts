@@ -74,8 +74,11 @@ export async function PUT(
 
     // Se está atualizando o email, verificar se já existe
     if (body.email && body.email !== existingCliente.email) {
-      const emailExists = await prisma.cliente.findUnique({
-        where: { email: body.email },
+      const emailExists = await prisma.cliente.findFirst({
+        where: {
+          email: body.email,
+          usuarioId: existingCliente.usuarioId,
+        },
       });
 
       if (emailExists) {

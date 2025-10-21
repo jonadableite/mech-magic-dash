@@ -3,19 +3,33 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./prisma";
 import { emailOTP, organization, twoFactor } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
+import { stripe } from "@better-auth/stripe";
+import Stripe from "stripe";
 import { AppConfig } from "@/lib/config/app.config";
 import { emailService } from "@/lib/services/email.service";
 import { urlService } from "@/lib/services/url.service";
+
+// Configuração do Stripe (Single Responsibility Principle)
+let stripeClient: Stripe | null = null;
+try {
+  if (process.env.STRIPE_SECRET_KEY) {
+    stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: "2025-08-27.basil", // Versão compatível com Stripe v18
+    });
+  }
+} catch (error) {
+  console.warn("Stripe não configurado:", error);
+}
+
 import type { Prettify } from "@/lib/types/common";
-import type { Organization } from "@/@saas-boilerplate/features/organization";
-import type { Membership } from "@/@saas-boilerplate/features/membership";
-import type { Invitation } from "@/@saas-boilerplate/features/invitation";
 
 export const auth = betterAuth({
-  appName: AppConfig.name,
-  baseURL: AppConfig.url,
+  appName: "Mech Magic Dash",
+  baseURL: process.env.APP_URL || "http://localhost:3000",
 
-  secret: AppConfig.providers.auth.secret,
+  secret:
+    process.env.BETTER_AUTH_SECRET ||
+    "6oQe9EL7dnzk7Kqd1gAV0p1eHwDTysR3mK8pL9nQ2rS4tU6vW7xY8zA1bC3dE5fG",
 
   database: prismaAdapter(prisma, {
     provider: "postgresql",
@@ -50,80 +64,13 @@ export const auth = betterAuth({
     },
   },
 
-  plugins: [
-    nextCookies(),
-    twoFactor({
-      issuer: AppConfig.name,
-    }),
-    organization({
-      sendInvitationEmail: async ({ email, organization, id }) => {
-        const result = await emailService.send({
-          to: email,
-          template: "organization-invite",
-          data: {
-            email,
-            organization: organization.name,
-            url: urlService.get(`/auth?invitation=${id}`),
-          },
-        });
-
-        if (!result.success) {
-          throw new Error(
-            `Failed to send invitation email: ${result.error?.message}`
-          );
-        }
-      },
-    }),
-    emailOTP({
-      async sendVerificationOTP({ email, otp, type }) {
-        // Define subject based on OTP type using object mapping
-        const subjectMap = {
-          "sign-in": "Seu Código de Acesso",
-          "email-verification": "Verificar Seu Email",
-          "forget-password": "Recuperação de Senha",
-          default: "Código de Verificação",
-        };
-
-        const subject = subjectMap[type] || subjectMap.default;
-
-        // Send the email with the OTP code
-        const result = await emailService.send({
-          to: email,
-          template: "otp-code",
-          data: {
-            email,
-            otpCode: otp,
-            expiresInMinutes: 10, // Default expiration time
-          },
-        });
-
-        if (!result.success) {
-          throw new Error(`Failed to send OTP email: ${result.error?.message}`);
-        }
-      },
-    }),
-  ],
+  plugins: [nextCookies()],
 });
 
 /**
  * @description The session of the application
  */
 export type AuthSession = typeof auth.$Infer.Session;
-export type AuthOrganization = Prettify<
-  Organization & {
-    members: Prettify<
-      Membership & {
-        user: {
-          id: string;
-          name: string;
-          email: string;
-          image?: string | null;
-        };
-      }
-    >[];
-    invitations: Invitation[];
-  }
->;
 
 // Re-export types for convenience
 export type {

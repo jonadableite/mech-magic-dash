@@ -16,14 +16,14 @@ import {
   Table,
 } from "lucide-react";
 import { formatBRL } from "@/lib/currency";
-import { FiltrosRelatorio, FiltrosRelatorioProps } from "./filtros-relatorio";
+import { FiltrosRelatorio, type FiltrosRelatorioProps } from "./filtros-relatorio";
 import { GraficoFluxoCaixa } from "./grafico-fluxo-caixa";
 import { GraficoCategorias } from "./grafico-categorias";
 import { useRelatorio, useExportarRelatorio } from "@/hooks/use-relatorios";
 import { ToastService } from "@/lib/toast";
 
 export function RelatoriosDashboard() {
-  const [filtros, setFiltros] = useState<FiltrosRelatorioProps["filtros"]>({
+  const [filtros, setFiltros] = useState<FiltrosRelatorio>({
     periodo: "30dias",
     tipoRelatorio: "fluxo",
     formatoGrafico: "linha",
@@ -32,7 +32,7 @@ export function RelatoriosDashboard() {
   const { relatorio, isLoading, error } = useRelatorio(filtros);
   const { exportar } = useExportarRelatorio();
 
-  const handleFiltrosChange = (novosFiltros: FiltrosRelatorioProps["filtros"]) => {
+  const handleFiltrosChange = (novosFiltros: FiltrosRelatorio) => {
     setFiltros(novosFiltros);
   };
 

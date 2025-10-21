@@ -54,7 +54,7 @@ export interface OrdemServico {
 class ClienteService {
   private client = apiClient;
 
-  async getClientes(): Promise<PaginatedResponse<Cliente>> {
+  async getClientes(): Promise<ApiResponse<Cliente[]>> {
     return this.client.get<Cliente[]>("/clientes");
   }
 
@@ -92,11 +92,10 @@ export function useClientes() {
 
   return {
     clientes: data?.data || [],
-    pagination: data?.pagination,
     isLoading,
     error,
     mutate,
-  };
+  }
 }
 
 export function useCliente(id: string) {

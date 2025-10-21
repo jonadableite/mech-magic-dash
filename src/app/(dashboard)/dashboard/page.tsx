@@ -23,7 +23,6 @@ export default function DashboardPage() {
   if (!isInitialized || authLoading) {
     return (
       <div className="space-y-6 animate-fade-in">
-        <DebugAuth />
         <div className="text-center">
           <p>Carregando autenticação...</p>
         </div>
@@ -35,7 +34,6 @@ export default function DashboardPage() {
   if (!isAuthenticated) {
     return (
       <div className="space-y-6 animate-fade-in">
-        <DebugAuth />
         <Card>
           <CardContent className="p-6">
             <p className="text-destructive">Usuário não autenticado</p>
@@ -104,7 +102,7 @@ export default function DashboardPage() {
   ] : [];
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in" data-tour="dashboard">
       <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 rounded-xl border border-primary/20">
         <div className="flex items-center gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg">

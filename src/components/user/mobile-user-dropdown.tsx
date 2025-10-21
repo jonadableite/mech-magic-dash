@@ -108,7 +108,7 @@ export function MobileUserDropdown({ user, className }: MobileUserDropdownProps)
       icon: CreditCard,
       label: "Assinatura",
       onClick: () => {
-        router.push("/billing");
+        router.push("/billing" as any);
         setIsOpen(false);
       },
     },

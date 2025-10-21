@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
       ...caixa,
       valorInicial: Number(caixa.valorInicial),
       valorFinal: caixa.valorFinal ? Number(caixa.valorFinal) : null,
-      movimentacoes: caixas.map((mov) => ({
+      movimentacoes: caixa.movimentacoes.map((mov) => ({
         ...mov,
         valor: Number(mov.valor),
       })),

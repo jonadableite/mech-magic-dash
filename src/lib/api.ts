@@ -63,9 +63,11 @@ export class ApiClient {
   }
 
   async post<T>(endpoint: string, data: any): Promise<ApiResponse<T>> {
+    const isFormData = data instanceof FormData;
     return this.request<T>(endpoint, {
       method: "POST",
-      body: JSON.stringify(data),
+      body: isFormData ? data : JSON.stringify(data),
+      headers: isFormData ? {} : { "Content-Type": "application/json" },
     });
   }
 

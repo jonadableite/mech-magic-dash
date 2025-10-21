@@ -271,15 +271,41 @@ model Comissao {
   @@map("comissoes")
 }
 
+// ===== SISTEMA DE ASSINATURAS STRIPE =====
+
+model Subscription {
+  id                    String   @id @default(cuid())
+  plan                  String
+  referenceId           String   @unique
+  stripeCustomerId      String?
+  stripeSubscriptionId  String?
+  status                String   @default("incomplete")
+  periodStart           DateTime?
+  periodEnd             DateTime?
+  cancelAtPeriodEnd     Boolean  @default(false)
+  seats                 Int?
+  trialStart            DateTime?
+  trialEnd              DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("subscriptions")
+}
+
 model Usuario {
   id        String   @id @default(cuid())
   nome      String
   email     String   @unique
   senha     String
+  telefone  String?
+  avatar    String?
   role      Role     @default(USUARIO)
   ativo     Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  // Campos do Stripe
+  stripeCustomerId String?   @unique
 
   // Relacionamentos
   clientes      Cliente[]

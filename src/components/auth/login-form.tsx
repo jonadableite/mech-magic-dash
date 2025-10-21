@@ -117,7 +117,7 @@ export function LoginForm() {
             type="button"
             variant="link"
             className="text-sm text-primary hover:text-primary/80 p-0 h-auto"
-            onClick={() => router.push("/forgot-password")}
+            onClick={() => router.push("/forgot-password" as any)}
           >
             Esqueceu a senha?
           </Button>
