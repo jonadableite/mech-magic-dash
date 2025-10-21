@@ -21,11 +21,11 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Set Prisma to use the correct OpenSSL version
+# Set Prisma environment variables
 ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
 ENV OPENSSL_DIR=/usr
 
-# Generate Prisma client with correct binary target
+# Generate Prisma client with the correct binary target
 RUN npx prisma generate
 
 # Build the application
@@ -34,12 +34,13 @@ RUN npm run build
 # Production image, copy all the files and run next
 FROM base AS runner
 
-# Install OpenSSL for runtime
+# Install OpenSSL libraries for runtime
 RUN apk add --no-cache openssl libssl3 libcrypto3
 
 WORKDIR /app
 
 ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
@@ -54,7 +55,7 @@ RUN chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Copy Prisma files
+# Copy Prisma files - CRITICAL for runtime
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
