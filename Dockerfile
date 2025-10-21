@@ -23,6 +23,9 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Set Prisma to use OpenSSL 3
+ENV PRISMA_OPENSSL_VERSION="openssl-3.0.x"
+
 # Generate Prisma client
 RUN npx prisma generate
 
