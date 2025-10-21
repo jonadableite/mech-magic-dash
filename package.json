@@ -6,7 +6,7 @@
     "dev": "next dev",
     "compile": "next experimental-compile",
     "dev:email": "email dev --dir src/content/mails --port 3001",
-    "build": "next build",
+    "build": "npx prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest --watch",
