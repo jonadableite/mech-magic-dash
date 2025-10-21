@@ -2,7 +2,7 @@ FROM node:20-alpine AS base
 
 # Install dependencies only when needed
 FROM base AS deps
-RUN apk add --no-cache libc6-compat python3 make g++ py3-pip openssl1.1-compat
+RUN apk add --no-cache libc6-compat python3 make g++ py3-pip
 WORKDIR /app
 
 # Copy package files
