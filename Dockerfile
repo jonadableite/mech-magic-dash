@@ -1,43 +1,59 @@
-# Etapa base
 FROM node:20-alpine AS base
 
-# Etapa de dependências
 FROM base AS deps
 RUN apk add --no-cache libc6-compat python3 make g++ py3-pip openssl openssl1.1-compat
 WORKDIR /app
 
+# Copy package files
 COPY package.json package-lock.json* ./
 
+# Set environment variables to avoid better-sqlite3 compilation issues
+ENV npm_config_build_from_source=false
+ENV npm_config_cache=/tmp/.npm
+ENV npm_config_optional=false
+ENV npm_config_ignore_scripts=true
+
+# Install dependencies
 RUN npm ci --prefer-offline --no-audit --progress=false
 
-# Etapa de build
+# Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Garante que o Prisma use engines compatíveis com OpenSSL 3
+# Set Prisma to use OpenSSL 3
 ENV PRISMA_OPENSSL_VERSION="openssl-3.0.x"
 
+# Generate Prisma client
 RUN npx prisma generate
+
+# Build the application
 RUN npm run build
 
-# Etapa final
+# Production image, copy all the files and run next
 FROM base AS runner
 WORKDIR /app
+
 ENV NODE_ENV=production
 
-# Usuário seguro (Next.js recomenda)
-RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
 
-# Copia arquivos essenciais
 COPY --from=builder /app/public ./public
+
+# Set the correct permission for prerender cache
+RUN mkdir .next
+RUN chown nextjs:nodejs .next
+
+# Automatically leverage output traces to reduce image size
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 USER nextjs
 
 EXPOSE 3000
+
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
