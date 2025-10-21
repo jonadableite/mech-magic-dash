@@ -1,7 +1,8 @@
 FROM node:20-alpine AS base
 
+# Install dependencies only when needed
 FROM base AS deps
-RUN apk add --no-cache libc6-compat python3 make g++ py3-pip openssl openssl1.1-compat
+RUN apk add --no-cache libc6-compat python3 make g++ py3-pip openssl1.1-compat
 WORKDIR /app
 
 # Copy package files
@@ -21,9 +22,6 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
-# Set Prisma to use OpenSSL 3
-ENV PRISMA_OPENSSL_VERSION="openssl-3.0.x"
 
 # Generate Prisma client
 RUN npx prisma generate
